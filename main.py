@@ -20,15 +20,25 @@ class LaminateMaker(tk.Frame):
         self.new_btn.grid(row=0, column=1, sticky='w')
 
         # overall layout
-        self.table.grid(row=0, column=0, sticky='we')
+        self.table.grid(row=0, column=0, sticky='nwe')
         self.bottom_frame.grid(row=2, column=0, sticky='we')
 
-        # popup menu
-        menu_commands = {
-            'Add layer': self.table.add_row,
-        }
-        self.popup_menu = RightClick(self.table, **menu_commands)
+        # toplevel menu
+        menubar = tk.Menu(self.master)
+        menubar.add_command(label='New Layer', command=self.table.add_row)
+        menubar.add_command(label='Quit!', command=self.master.quit)
+        self.master.config(menu=menubar)
 
+        # popup menu
+        rclick = tk.Menu(self.master, tearoff=0)
+        rclick.add_command(label='Add layer', command=self.table.add_row)
+        rclick.add_command(label='Delete layers', command=self.table.delete_rows)
+        rclick.add_command(label='Copy layer', command=lambda: print('copy'))
+
+        def popup(event):
+            rclick.post(event.x_root, event.y_root)
+
+        self.master.bind('<Button-3>', popup)
 
 
 class EntryTable(tk.Frame):
@@ -68,13 +78,26 @@ class EntryTable(tk.Frame):
         self._re_order_widgets()
 
 
+    def delete_rows(self):
+        '''Finds the selected rows and deletes them'''
+        for widget in self._widgets[1:]:
+            if widget[0].var.get() == 1:
+                [cell.grid_forget() for cell in widget]
+                self._widgets.remove(widget)
+        self._re_order_widgets()
+
+
+
     def _make_row(self):
         '''Makes an empty row for the table.
         Doesn't put it anywhere'''
         current_row = []
 
-        check_box = tk.Checkbutton(self)
-        current_row.append(check_box)
+        v = tk.IntVar()
+        c = tk.Checkbutton(
+            self, variable=v)
+        c.var = v
+        current_row.append(c)
 
         for _ in range(self._columns):
             entry = tk.Entry(self, textvariable=tk.StringVar(), borderwidth=0, width=10)
@@ -102,26 +125,6 @@ class EntryTable(tk.Frame):
             for column, cell in enumerate(widget):
                 cell.grid(row=row, column=column, sticky='nsew', padx=1, pady=1)
                 self.grid_columnconfigure(column, weight=1)        
-
-
-class RightClick:
-    '''A right click popup menu'''
-    def __init__(self, master, **kwargs):
-
-        # create a popup menu
-        self.aMenu = tk.Menu(master, tearoff=0)
-        self.aMenu.add_command(label='Say Hello', command=self.hello)
-
-        for label, command in kwargs.items():
-            self.aMenu.add_command(label=label, command=command)
-
-
-    def hello(self):
-        print('hello!')
-
-
-    def popup(self, event):
-        self.aMenu.post(event.x_root, event.y_root)
 
 
 root = tk.Tk()
