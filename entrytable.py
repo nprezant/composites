@@ -28,8 +28,9 @@ class EntryTable(tk.Frame):
     
     @property
     def _table_header(self):
-        '''Property for the header of the table'''
-        return self._table[0]
+        '''Property for the header of the table.
+        Does not return button header'''
+        return self._table[0][1:]
 
 
     @property
@@ -138,6 +139,7 @@ class EntryTable(tk.Frame):
             txt = tk.StringVar()
             entry = tk.Entry(self, textvariable=txt, justify=tk.CENTER, borderwidth=0, width=10)
             entry.text = txt
+            entry.bind('<FocusOut>', self._recolor_focusout_event)
             current_row.append(entry)
         return current_row
 
@@ -159,6 +161,32 @@ class EntryTable(tk.Frame):
         return current_row
 
 
+    def _recolor(self, row, color):
+        '''Re colors a row of the table'''
+        for cell in row:
+            try:
+                cell.config({'background': color})
+            except:
+                cell.config({'background': 'White'})
+
+
+    def _recolor_focusout_event(self, event):
+        '''Recolors the row when user focuses out of a widget'''
+        orientation_col =  2 # self._table_header.index('Orientation')
+        for row in self._table_body:
+            try:
+                col = row.index(event.widget)
+            except:
+                continue
+            else:
+                if col == orientation_col:
+                    color = map_color(event.widget.text.get())
+                    self._recolor(row, color)
+                break
+            
+
+
+
     def _re_order_rows(self):
         '''Re numbers the widget grid locations based on the list order'''
         for row, widget in enumerate(self._table):
@@ -168,13 +196,9 @@ class EntryTable(tk.Frame):
                 if column == 1 and not row == 0:
                     cell.text.set(str(row))
 
-                # update color
                 if column == 2:
-                    color = color_map[cell.text.get()]
-                    try:
-                        cell.config({'background': color})
-                    except:
-                        cell.config({'background': 'White'})
+                    color = map_color(cell.text.get())
+                    self._recolor(widget, color)
 
                 cell.lift()
 
@@ -222,7 +246,7 @@ class EntryTable(tk.Frame):
                 ('all files','*.*')))
         if filename == '': return
         with open(filename, 'w') as f:
-            for cell in self._table_header[1:]:
+            for cell in self._table_header:
                 f.write('{:8},'.format(cell.text.get()))
             f.write('\n')
 
@@ -252,15 +276,22 @@ class EntryTable(tk.Frame):
                 for col, cell in enumerate(self._table_data[row]):
                     v = vals[col].strip()
                     cell.text.set(v)
+        self._re_order_rows()
 
 
 color_map = {
-    '0': 'Blue',
-    '30': 'Green',
-    '45': 'Green',
-    '60': 'Green',
-    '90': 'Red'
+    '0':    '#99cfff', # Dark Blue
+    '30':   '#99fbff', # Light Blue
+    '45':   '#99ff9c', # Green
+    '60':   '#ffe099', # Orange
+    '90':   '#ffb099' # Red
 }
 
-def map_color(orientation):
-    '''maps the ORIENTATION to a color'''
+def map_color(key):
+    '''maps the KEY to a color'''
+    try:
+        color = color_map[key]
+    except:
+        color = 'White'
+    finally:
+        return color
