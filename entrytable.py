@@ -79,25 +79,28 @@ class EntryTable(tk.Frame):
         '''Copies the current row and inserts it above'''
         try:
             row_num, _ = self._find_position(event.widget)
+            row_num += 1
         except:
             pass
         else:
             row = self._table[row_num]
             cp = self.copy_row(row)
             self._table.insert(row_num + 0, cp)
+            self._move_focus_up(event)
             self.draw()
         
 
     def copy_row_down(self, event):
-        '''Copies the current row and inserts it below'''
+        '''Copies the current row and inserts it above'''
         try:
             row_num, _ = self._find_position(event.widget)
+            row_num += 1
         except:
             pass
         else:
             row = self._table[row_num]
             cp = self.copy_row(row)
-            self._table.insert(row_num + 1, cp)
+            self._table.insert(row_num + 0, cp)
             self.draw()
 
     def add_header_row(self, headers=None):

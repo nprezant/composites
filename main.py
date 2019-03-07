@@ -39,9 +39,9 @@ class LaminateMaker(tk.Frame):
 
         # layers pulldown
         layersmenu = tk.Menu(menubar, tearoff=0)
-        layersmenu.add_command(label='Add', command=self.table.add_row, accelerator='Alt+A')
-        layersmenu.add_command(label='Delete Selected', command=self.table.delete_selected_rows, accelerator='Alt+D')
-        layersmenu.add_command(label='Copy Selected', command=self.table.copy_selected_rows, accelerator='Alt+C')
+        layersmenu.add_command(label='Add layer', command=self.table.add_row)
+        layersmenu.add_command(label='Delete Selected', command=self.table.delete_selected_rows)
+        layersmenu.add_command(label='Copy Selected', command=self.table.copy_selected_rows)
         layersmenu.add_command(label='Mirror Selected', command=self.table.mirror_selected_rows, accelerator='Alt+M')
         menubar.add_cascade(label='Layers', menu=layersmenu)
         self.master.config(menu=menubar)
@@ -63,9 +63,6 @@ class LaminateMaker(tk.Frame):
         # keypress bindings
         self.bind_all('<Control-KeyRelease-a>', self.table.select_all)
         self.bind_all('<Control-KeyRelease-w>', self.close_event)
-        self.bind_all('<Alt-KeyRelease-a>', self.table.add_row)
-        self.bind_all('<Alt-KeyRelease-d>', self.table.delete_selected_rows)
-        self.bind_all('<Alt-KeyRelease-c>', self.table.copy_selected_rows)
         self.bind_all('<Alt-KeyRelease-m>', self.table.mirror_selected_rows)
 
 
