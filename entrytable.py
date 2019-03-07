@@ -140,6 +140,8 @@ class EntryTable(tk.Frame):
             entry = tk.Entry(self, textvariable=txt, justify=tk.CENTER, borderwidth=0, width=10)
             entry.text = txt
             entry.bind('<FocusOut>', self._recolor_focusout_event)
+            entry.bind('<Return>', self._move_focus_down)
+            entry.bind('<Shift-Return>', self._move_focus_up)
             current_row.append(entry)
         return current_row
 
@@ -172,20 +174,47 @@ class EntryTable(tk.Frame):
 
     def _recolor_focusout_event(self, event):
         '''Recolors the row when user focuses out of a widget'''
-        orientation_col =  2 # self._table_header.index('Orientation')
-        for row in self._table_body:
+        orientation_col =  1 # self._table_header.index('Orientation')
+        row_num, col_num = self._find_position(event.widget)
+        if col_num == orientation_col:
+            row = self._table_body[row_num]
+            color = map_color(event.widget.text.get())
+            self._recolor(row, color)
+
+
+    def _find_position(self, cell):
+        '''Find the position (row, column_num) of a CELL in the table'''
+        for row_num, row in enumerate(self._table_data):
             try:
-                col = row.index(event.widget)
+                column_num = row.index(cell)
             except:
                 continue
             else:
-                if col == orientation_col:
-                    color = map_color(event.widget.text.get())
-                    self._recolor(row, color)
-                break
+                return row_num, column_num
+        raise ValueError('cell not found')
+
+
+    def _move_focus_down(self, event):
+        '''Moves the focus down a cell in the table'''
+        row_num, col_num = self._find_position(event.widget)
+        try:
+            new_cell = self._table_data[row_num + 1][col_num]
+        except:
+            pass
+        else:
+            new_cell.focus()
+
+
+    def _move_focus_up(self, event):
+        '''Moves the focus up a cell in the table'''
+        row_num, col_num = self._find_position(event.widget)
+        try:
+            new_cell = self._table_data[row_num - 1][col_num]
+        except:
+            pass
+        else:
+            new_cell.focus()
             
-
-
 
     def _re_order_rows(self):
         '''Re numbers the widget grid locations based on the list order'''
@@ -204,6 +233,7 @@ class EntryTable(tk.Frame):
 
                 cell.grid(row=row, column=column, sticky='nsew', padx=1, pady=1)
                 self.grid_columnconfigure(column, weight=1)
+            self.grid_columnconfigure(0, weight=0)
 
 
     def _select_start(self, event):
