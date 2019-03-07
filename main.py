@@ -25,15 +25,18 @@ class LaminateMaker(tk.Frame):
 
         # top-level menu
         menubar = tk.Menu(self.master)
-        menubar.add_command(label='New Layer', command=self.table.add_row)
+        menubar.add_command(label='New', command=self.table.add_row)
+        menubar.add_command(label='Delete', command=self.table.delete_selected_rows)
+        menubar.add_command(label='Copy', command=self.table.copy_selected_rows)
+        menubar.add_command(label='Mirror', command=self.table.mirror_selected_rows)
         menubar.add_command(label='Quit!', command=self.master.quit)
         self.master.config(menu=menubar)
 
         # popup menu
         rclick = tk.Menu(self.master, tearoff=0)
-        rclick.add_command(label='Add layer', command=self.table.add_row)
+        rclick.add_command(label='New layer', command=self.table.add_row)
         rclick.add_command(label='Delete layers', command=self.table.delete_selected_rows)
-        rclick.add_command(label='Copy layer', command=self.table.copy_selected_rows)
+        rclick.add_command(label='Copy layers', command=self.table.copy_selected_rows)
 
         def popup(event):
             rclick.post(event.x_root, event.y_root)
@@ -67,10 +70,13 @@ class EntryTable(tk.Frame):
 
 
     def copy(self, row):
-        '''Copies the row index provided and inserts it below'''
-        self.insert_row(row+1)
-        for j, cell in enumerate(self._widgets[row][1:]):
-            cell.text.set(self._widgets[row+1][j+1].text.get())
+        '''Copies the row index provided and returns it'''
+        self.add_row()
+        old_row = row
+        new_row = self._widgets.pop()
+        for x, cell in enumerate(new_row[1:]):
+            cell.text.set(old_row[x+1].text.get())
+        return new_row
 
 
     def add_header_row(self, headers=None):
@@ -86,7 +92,7 @@ class EntryTable(tk.Frame):
         '''Generator for the selected rows'''
         for row, widget in enumerate(self._widgets[1:]):
             if widget[0].var.get() == 1:
-                yield row, widget
+                yield row+1, widget
 
 
     def delete_selected_rows(self):
@@ -98,11 +104,30 @@ class EntryTable(tk.Frame):
 
 
     def copy_selected_rows(self):
-        '''Copies the selected rows'''
-        for i, _ in self.selected_rows():
+        '''Copies the selected rows, inserts them below the originals'''
+        for i, row in self.selected_rows():
             print(f'copy row {i}')
             if not i == 0:
-                self.copy(i)
+                new_row = self.copy(row)
+                self._widgets.insert(i+1, new_row)
+        self._re_order_widgets()
+
+
+    def mirror_selected_rows(self):
+        '''Mirrors the selected rows about the bottom horizontal plane'''
+        selected = [x for x, _ in self.selected_rows()]
+        first_row = min(selected)
+        last_row = max(selected)
+        print(f'mirroring {first_row} to {last_row}')
+        # make a list of copied rows between the first and last
+        selected_copies = []
+        for x in range(first_row, last_row+1):
+            new_row = self.copy(self._widgets[x])
+            selected_copies.append(new_row)
+
+        # flip the list and insert it (reversed) after that last selected row
+        for cp in selected_copies:
+            self._widgets.insert(last_row+1, cp)
         self._re_order_widgets()
 
 
@@ -148,6 +173,8 @@ class EntryTable(tk.Frame):
                 if column == 1:
                     if hasattr(cell, 'text'):
                         cell.text.set(str(row))
+
+                cell.lift()
 
                 cell.grid(row=row, column=column, sticky='nsew', padx=1, pady=1)
                 self.grid_columnconfigure(column, weight=1)        
