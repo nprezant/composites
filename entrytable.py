@@ -48,7 +48,7 @@ class EntryTable(tk.Frame):
         self._re_order_rows()
 
 
-    def add_row(self, count=1):
+    def add_row(self, event=None, count=1):
         '''Adds an empty row (or rows) to the bottom of the table'''
         self.insert_row(len(self._table), count)
 
@@ -86,7 +86,7 @@ class EntryTable(tk.Frame):
                 yield row+1, widget
 
 
-    def delete_selected_rows(self):
+    def delete_selected_rows(self, event=None):
         '''Deletes the selected rows'''
         for _, widget in self.selected_rows():
             [cell.grid_forget() for cell in widget]
@@ -94,7 +94,7 @@ class EntryTable(tk.Frame):
         self._re_order_rows()
 
 
-    def copy_selected_rows(self):
+    def copy_selected_rows(self, event=None):
         '''Copies the selected rows, inserts them below the originals'''
         for i, row in self.selected_rows():
             if not i == 0:
@@ -103,7 +103,7 @@ class EntryTable(tk.Frame):
         self._re_order_rows()
 
 
-    def mirror_selected_rows(self):
+    def mirror_selected_rows(self, event=None):
         '''Mirrors the selected rows about the bottom horizontal plane'''
         selected = [x for x, _ in self.selected_rows()]
         if len(selected) == 0:

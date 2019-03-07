@@ -34,34 +34,39 @@ class LaminateMaker(tk.Frame):
         filemenu.add_command(label='Import', command=self.table.import_data)
         filemenu.add_command(label='Export', command=self.table.export_data)
         filemenu.add_separator()
-        filemenu.add_command(label='Exit', command=self.close_event)
+        filemenu.add_command(label='Quit', command=self.close_event, accelerator='Ctrl+W')
         menubar.add_cascade(label='File', menu=filemenu)
 
         # layers pulldown
         layersmenu = tk.Menu(menubar, tearoff=0)
-        layersmenu.add_command(label='Add', command=self.table.add_row)
-        layersmenu.add_command(label='Delete', command=self.table.delete_selected_rows)
-        layersmenu.add_command(label='Copy', command=self.table.copy_selected_rows)
-        layersmenu.add_command(label='Mirror', command=self.table.mirror_selected_rows)
+        layersmenu.add_command(label='Add', command=self.table.add_row, accelerator='Alt+A')
+        layersmenu.add_command(label='Delete', command=self.table.delete_selected_rows, accelerator='Alt+D')
+        layersmenu.add_command(label='Copy', command=self.table.copy_selected_rows, accelerator='Alt+C')
+        layersmenu.add_command(label='Mirror', command=self.table.mirror_selected_rows, accelerator='Alt+M')
         menubar.add_cascade(label='Layers', menu=layersmenu)
         self.master.config(menu=menubar)
 
         # popup menu
         rclick = tk.Menu(self.master, tearoff=0)
-        rclick.add_command(label='New layer', command=self.table.add_row)
+        rclick.add_command(label='Add layer', command=self.table.add_row)
         rclick.add_command(label='Delete layers', command=self.table.delete_selected_rows)
         rclick.add_command(label='Copy layers', command=self.table.copy_selected_rows)
+        rclick.add_command(label='Mirror layers', command=self.table.mirror_selected_rows)
         rclick.add_command(label='Select All', command=self.table.select_all)
 
         def popup(event):
             rclick.post(event.x_root, event.y_root)
 
         # button bindings
-        self.master.bind('<Button-3>', popup)
+        self.bind_all('<Button-3>', popup)
 
         # keypress bindings
-        self.master.bind('<Control-KeyRelease-a>', self.table.select_all)
-        self.master.bind('<Control-KeyRelease-w>', self.close_event)
+        self.bind_all('<Control-KeyRelease-a>', self.table.select_all)
+        self.bind_all('<Control-KeyRelease-w>', self.close_event)
+        self.bind_all('<Alt-KeyRelease-a>', self.table.add_row)
+        self.bind_all('<Alt-KeyRelease-d>', self.table.delete_selected_rows)
+        self.bind_all('<Alt-KeyRelease-c>', self.table.copy_selected_rows)
+        self.bind_all('<Alt-KeyRelease-m>', self.table.mirror_selected_rows)
 
 
     def close_event(self, event):
