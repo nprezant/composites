@@ -45,7 +45,7 @@ class EntryTable(tk.Frame):
         for _ in range(count):
             new_row = self._make_row()
             self._table.insert(row, new_row)
-        self._re_order_rows()
+        self.draw()
 
 
     def add_row(self, event=None, count=1):
@@ -53,8 +53,20 @@ class EntryTable(tk.Frame):
         self.insert_row(len(self._table), count)
 
 
+    def _add_row_event(self, event):
+        '''Adds a row underneath the row where the event was called'''
+        try:
+            row_num, _ = self._find_position(event.widget)
+        except:
+            pass
+        else:
+            self.insert_row(row_num + 2)
+            self._move_focus_down(event)
+            self.draw()
+
+
     def copy_row(self, row):
-        '''Copies the row index provided and returns it'''
+        '''Copies the row provided and returns it'''
         self.add_row()
         old_row = row
         new_row = self._table.pop()
@@ -63,13 +75,38 @@ class EntryTable(tk.Frame):
         return new_row
 
 
+    def copy_row_up(self, event):
+        '''Copies the current row and inserts it above'''
+        try:
+            row_num, _ = self._find_position(event.widget)
+        except:
+            pass
+        else:
+            row = self._table[row_num]
+            cp = self.copy_row(row)
+            self._table.insert(row_num + 0, cp)
+            self.draw()
+        
+
+    def copy_row_down(self, event):
+        '''Copies the current row and inserts it below'''
+        try:
+            row_num, _ = self._find_position(event.widget)
+        except:
+            pass
+        else:
+            row = self._table[row_num]
+            cp = self.copy_row(row)
+            self._table.insert(row_num + 1, cp)
+            self.draw()
+
     def add_header_row(self, headers=None):
         '''Adds the header row to the top of the table'''
         if headers is None:
             headers = ['' for x in self._columns]
         new_row = self._make_header_row(headers)
         self._table.insert(0, new_row)
-        self._re_order_rows()
+        self.draw()
 
 
     def data_iter(self):
@@ -91,7 +128,25 @@ class EntryTable(tk.Frame):
         for _, widget in self.selected_rows():
             [cell.grid_forget() for cell in widget]
             self._table.remove(widget)
-        self._re_order_rows()
+        self.draw()
+
+
+    def _delete_event(self, event):
+        '''Deletes the row of the widget this was called from
+        First, shifts the focus down'''
+        try:
+            row_num, _ = self._find_position(event.widget)
+        except:
+            pass # cell doesn't exist anymore, leave it be
+        else:
+            if row_num == len(self._table_body) - 1:
+                self._move_focus_up(event)
+            else:
+                self._move_focus_down(event)
+            row = self._table[row_num + 1]
+            [cell.grid_forget() for cell in row]
+            self._table.remove(row)
+            self.draw()
 
 
     def copy_selected_rows(self, event=None):
@@ -100,7 +155,7 @@ class EntryTable(tk.Frame):
             if not i == 0:
                 new_row = self.copy_row(row)
                 self._table.insert(i+1, new_row)
-        self._re_order_rows()
+        self.draw()
 
 
     def mirror_selected_rows(self, event=None):
@@ -120,7 +175,7 @@ class EntryTable(tk.Frame):
         # insert list (reversed) after the last selected row
         for cp in selected_copies:
             self._table.insert(last_row+1, cp)
-        self._re_order_rows()
+        self.draw()
 
 
     def _make_row(self):
@@ -142,6 +197,16 @@ class EntryTable(tk.Frame):
             entry.bind('<FocusOut>', self._recolor_focusout_event)
             entry.bind('<Return>', self._move_focus_down)
             entry.bind('<Shift-Return>', self._move_focus_up)
+            entry.bind('<Alt-Down>', self._move_row_down)
+            entry.bind('<Alt-Up>', self._move_row_up)
+            entry.bind('<Up>', self._move_focus_up)
+            entry.bind('<Down>', self._move_focus_down)
+            entry.bind('<Left>', self._move_focus_left)
+            entry.bind('<Right>', self._move_focus_right)
+            entry.bind('<Alt-d>', self._delete_event)
+            entry.bind('<Alt-a>', self._add_row_event)
+            entry.bind('<Alt-Shift-Up>', self.copy_row_up)
+            entry.bind('<Alt-Shift-Down>', self.copy_row_down)
             current_row.append(entry)
         return current_row
 
@@ -175,11 +240,16 @@ class EntryTable(tk.Frame):
     def _recolor_focusout_event(self, event):
         '''Recolors the row when user focuses out of a widget'''
         orientation_col =  1 # self._table_header.index('Orientation')
-        row_num, col_num = self._find_position(event.widget)
-        if col_num == orientation_col:
-            row = self._table_body[row_num]
-            color = map_color(event.widget.text.get())
-            self._recolor(row, color)
+        try:
+            row_num, col_num = self._find_position(event.widget)
+        except:
+            # data was likely imported
+            return
+        else:
+            if col_num == orientation_col:
+                row = self._table_body[row_num]
+                color = map_color(event.widget.text.get())
+                self._recolor(row, color)
 
 
     def _find_position(self, cell):
@@ -214,7 +284,60 @@ class EntryTable(tk.Frame):
             pass
         else:
             new_cell.focus()
-            
+
+
+    def _move_focus_left(self, event):
+        '''Moves the focus down a cell in the table'''
+        row_num, col_num = self._find_position(event.widget)
+        try:
+            new_cell = self._table_data[row_num][col_num - 1]
+        except:
+            pass
+        else:
+            new_cell.focus()
+
+
+    def _move_focus_right(self, event):
+        '''Moves the focus down a cell in the table'''
+        row_num, col_num = self._find_position(event.widget)
+        try:
+            new_cell = self._table_data[row_num][col_num + 1]
+        except:
+            pass
+        else:
+            new_cell.focus()
+
+
+    def _move_row_down(self, event):
+        '''moves a row down one in the table'''
+        row_num, _ = self._find_position(event.widget)
+        moved_row = self._table.pop(row_num + 1)
+        self._table.insert(row_num + 2, moved_row)
+        self.draw()
+
+
+    def _move_row_up(self, event):
+        '''moves a row down one in the table'''
+        row_num, _ = self._find_position(event.widget)
+        moved_row = self._table.pop(row_num + 1)
+        if row_num == 0:
+            row_num = 1
+        self._table.insert(row_num + 0, moved_row)
+        self.draw()
+
+
+    def draw(self):
+        '''Re-draws the table'''
+        self._re_order_rows()
+        self._recolor_all()
+
+
+    def _recolor_all(self):
+        '''Re-colors all rows'''
+        for row in self._table_body:
+            color = map_color(row[2].text.get())
+            self._recolor(row, color)
+
 
     def _re_order_rows(self):
         '''Re numbers the widget grid locations based on the list order'''
@@ -224,10 +347,6 @@ class EntryTable(tk.Frame):
                 # update the layer number for that column
                 if column == 1 and not row == 0:
                     cell.text.set(str(row))
-
-                if column == 2:
-                    color = map_color(cell.text.get())
-                    self._recolor(widget, color)
 
                 cell.lift()
 
@@ -306,7 +425,7 @@ class EntryTable(tk.Frame):
                 for col, cell in enumerate(self._table_data[row]):
                     v = vals[col].strip()
                     cell.text.set(v)
-        self._re_order_rows()
+        self.draw()
 
 
 color_map = {

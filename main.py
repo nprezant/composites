@@ -40,9 +40,9 @@ class LaminateMaker(tk.Frame):
         # layers pulldown
         layersmenu = tk.Menu(menubar, tearoff=0)
         layersmenu.add_command(label='Add', command=self.table.add_row, accelerator='Alt+A')
-        layersmenu.add_command(label='Delete', command=self.table.delete_selected_rows, accelerator='Alt+D')
-        layersmenu.add_command(label='Copy', command=self.table.copy_selected_rows, accelerator='Alt+C')
-        layersmenu.add_command(label='Mirror', command=self.table.mirror_selected_rows, accelerator='Alt+M')
+        layersmenu.add_command(label='Delete Selected', command=self.table.delete_selected_rows, accelerator='Alt+D')
+        layersmenu.add_command(label='Copy Selected', command=self.table.copy_selected_rows, accelerator='Alt+C')
+        layersmenu.add_command(label='Mirror Selected', command=self.table.mirror_selected_rows, accelerator='Alt+M')
         menubar.add_cascade(label='Layers', menu=layersmenu)
         self.master.config(menu=menubar)
 
