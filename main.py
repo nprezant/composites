@@ -37,6 +37,7 @@ class LaminateMaker(tk.Frame):
         rclick.add_command(label='New layer', command=self.table.add_row)
         rclick.add_command(label='Delete layers', command=self.table.delete_selected_rows)
         rclick.add_command(label='Copy layers', command=self.table.copy_selected_rows)
+        rclick.add_command(label='Select All', command=self.table.select_all)
 
         def popup(event):
             rclick.post(event.x_root, event.y_root)
@@ -50,30 +51,46 @@ class EntryTable(tk.Frame):
     def __init__(self, parent, headers=None, rows=10, columns=2):
         '''Initialize the table'''
         super().__init__(parent)
-        self._widgets = []
+        self._table = []
         self._columns = columns
         self.add_header_row(headers)
         self.add_row(count=rows)
+
+        self.bind('<Control-KeyRelease-a>', self.select_all)
+        self.bind('<Control-a>', self.select_all)
+        self.bind('<Control_L>', self.select_all)
+
+
+    @property
+    def _table_body(self):
+        '''Property for the body of the table'''
+        return self._table[1:]
+    
+    
+    @property
+    def _table_header(self):
+        '''Property for the header of the table'''
+        return self._table[0]
 
 
     def insert_row(self, row, count=1):
         '''Inserts an empty row at the specified `row`'''
         for _ in range(count):
             new_row = self._make_row()
-            self._widgets.insert(row, new_row)
+            self._table.insert(row, new_row)
         self._re_order_widgets()
 
 
     def add_row(self, count=1):
         '''Adds an empty row (or rows) to the bottom of the table'''
-        self.insert_row(len(self._widgets), count)
+        self.insert_row(len(self._table), count)
 
 
-    def copy(self, row):
+    def copy_row(self, row):
         '''Copies the row index provided and returns it'''
         self.add_row()
         old_row = row
-        new_row = self._widgets.pop()
+        new_row = self._table.pop()
         for x, cell in enumerate(new_row[1:]):
             cell.text.set(old_row[x+1].text.get())
         return new_row
@@ -84,13 +101,13 @@ class EntryTable(tk.Frame):
         if headers is None:
             headers = ['' for x in self._columns]
         new_row = self._make_header_row(headers)
-        self._widgets.insert(0, new_row)
+        self._table.insert(0, new_row)
         self._re_order_widgets()
 
 
     def selected_rows(self):
         '''Generator for the selected rows'''
-        for row, widget in enumerate(self._widgets[1:]):
+        for row, widget in enumerate(self._table[1:]):
             if widget[0].var.get() == 1:
                 yield row+1, widget
 
@@ -99,17 +116,16 @@ class EntryTable(tk.Frame):
         '''Deletes the selected rows'''
         for _, widget in self.selected_rows():
             [cell.grid_forget() for cell in widget]
-            self._widgets.remove(widget)
+            self._table.remove(widget)
         self._re_order_widgets()
 
 
     def copy_selected_rows(self):
         '''Copies the selected rows, inserts them below the originals'''
         for i, row in self.selected_rows():
-            print(f'copy row {i}')
             if not i == 0:
-                new_row = self.copy(row)
-                self._widgets.insert(i+1, new_row)
+                new_row = self.copy_row(row)
+                self._table.insert(i+1, new_row)
         self._re_order_widgets()
 
 
@@ -119,15 +135,16 @@ class EntryTable(tk.Frame):
         first_row = min(selected)
         last_row = max(selected)
         print(f'mirroring {first_row} to {last_row}')
+
         # make a list of copied rows between the first and last
         selected_copies = []
         for x in range(first_row, last_row+1):
-            new_row = self.copy(self._widgets[x])
+            new_row = self.copy_row(self._table[x])
             selected_copies.append(new_row)
 
-        # flip the list and insert it (reversed) after that last selected row
+        # insert list (reversed) after the last selected row
         for cp in selected_copies:
-            self._widgets.insert(last_row+1, cp)
+            self._table.insert(last_row+1, cp)
         self._re_order_widgets()
 
 
@@ -137,10 +154,11 @@ class EntryTable(tk.Frame):
         current_row = []
 
         v = tk.IntVar()
-        c = tk.Checkbutton(
-            self, variable=v)
-        c.var = v
-        current_row.append(c)
+        cb = tk.Checkbutton(self, variable=v)
+        cb.var = v
+        cb.bind('<Button-1>', self._select_start)
+        cb.bind('<Shift-Button-1>', self._select_range)
+        current_row.append(cb)
 
         for _ in range(self._columns):
             txt = tk.StringVar()
@@ -166,7 +184,7 @@ class EntryTable(tk.Frame):
 
     def _re_order_widgets(self):
         '''Re numbers the widget grid locations based on the list order'''
-        for row, widget in enumerate(self._widgets):
+        for row, widget in enumerate(self._table):
             for column, cell in enumerate(widget):
 
                 # update the layer count
@@ -177,7 +195,37 @@ class EntryTable(tk.Frame):
                 cell.lift()
 
                 cell.grid(row=row, column=column, sticky='nsew', padx=1, pady=1)
-                self.grid_columnconfigure(column, weight=1)        
+                self.grid_columnconfigure(column, weight=1)
+
+
+    def _select_start(self, event):
+        '''mark this as the start of a range to select'''
+        checkbuttons = [row[0] for row in self._table_body]
+        self._start = checkbuttons.index(event.widget)
+        checkbuttons.remove(event.widget)
+        [cb.deselect() for cb in checkbuttons]
+
+    
+    def _select_range(self, event):
+        '''select a whole range of check boxes'''
+        checkbuttons = [row[0] for row in self._table_body]
+        start = self._start
+        end = checkbuttons.index(event.widget)
+        sl = slice(min(start, end)+1, max(start, end))
+        for cb in checkbuttons[sl]:
+            cb.toggle()
+        self._start = end
+
+
+    def select_all(self, event=None):
+        '''Select all check boxes
+        if they are all already checked, uncheck them'''
+        checkbuttons = [row[0] for row in self._table_body]
+        checked = [cb for cb in checkbuttons if cb.var.get() == 1]
+        if len(checked) == len(checkbuttons):
+            [cb.deselect() for cb in checkbuttons]
+        else:
+            [cb.select() for cb in checkbuttons]
 
 
 root = tk.Tk()
