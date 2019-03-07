@@ -15,7 +15,7 @@ class LaminateMaker(tk.Frame):
         '''Initialize the user interface'''
         # table
         headers = ['Layer', 'Orientation', 'Thickness', 'Material']
-        self.table = EntryTable(self.master, headers=headers, rows=10, columns=4)
+        self.table = EntryTable(self.master, headers=headers, rows=4)
 
         # bottom frame
         self.bottom_frame = tk.Frame(self.master)
@@ -28,13 +28,22 @@ class LaminateMaker(tk.Frame):
 
         # top-level menu
         menubar = tk.Menu(self.master)
-        menubar.add_command(label='New', command=self.table.add_row)
-        menubar.add_command(label='Delete', command=self.table.delete_selected_rows)
-        menubar.add_command(label='Copy', command=self.table.copy_selected_rows)
-        menubar.add_command(label='Mirror', command=self.table.mirror_selected_rows)
-        menubar.add_command(label='Export', command=self.table.export_data)
-        menubar.add_command(label='Import', command=self.table.import_data)
-        menubar.add_command(label='Quit!', command=self.close_event)
+
+        # file pulldown
+        filemenu = tk.Menu(menubar, tearoff=0)
+        filemenu.add_command(label='Import', command=self.table.import_data)
+        filemenu.add_command(label='Export', command=self.table.export_data)
+        filemenu.add_separator()
+        filemenu.add_command(label='Exit', command=self.close_event)
+        menubar.add_cascade(label='File', menu=filemenu)
+
+        # layers pulldown
+        layersmenu = tk.Menu(menubar, tearoff=0)
+        layersmenu.add_command(label='Add', command=self.table.add_row)
+        layersmenu.add_command(label='Delete', command=self.table.delete_selected_rows)
+        layersmenu.add_command(label='Copy', command=self.table.copy_selected_rows)
+        layersmenu.add_command(label='Mirror', command=self.table.mirror_selected_rows)
+        menubar.add_cascade(label='Layers', menu=layersmenu)
         self.master.config(menu=menubar)
 
         # popup menu

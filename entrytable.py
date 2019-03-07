@@ -10,7 +10,12 @@ class EntryTable(tk.Frame):
         '''Initialize the table'''
         super().__init__(parent)
         self._table = []
-        self._columns = columns
+
+        if headers is None:
+            self._columns = columns
+        else:
+            self._columns = len(headers)
+
         self.add_header_row(headers)
         self.add_row(count=rows)
 
@@ -75,7 +80,7 @@ class EntryTable(tk.Frame):
 
     def selected_rows(self):
         '''Generator for the selected rows'''
-        for row, widget in enumerate(self._table[1:]):
+        for row, widget in enumerate(self._table_body):
             if widget[0].var.get() == 1:
                 yield row+1, widget
 
@@ -100,6 +105,8 @@ class EntryTable(tk.Frame):
     def mirror_selected_rows(self):
         '''Mirrors the selected rows about the bottom horizontal plane'''
         selected = [x for x, _ in self.selected_rows()]
+        if len(selected) == 0:
+            selected = list(range(1, len(self._table_body) + 1))
         first_row = min(selected)
         last_row = max(selected)
 
@@ -157,9 +164,17 @@ class EntryTable(tk.Frame):
         for row, widget in enumerate(self._table):
             for column, cell in enumerate(widget):
 
-                # update the layer count
+                # update the layer number for that column
                 if column == 1 and not row == 0:
                     cell.text.set(str(row))
+
+                # update color
+                if column == 2:
+                    color = color_map[cell.text.get()]
+                    try:
+                        cell.config({'background': color})
+                    except:
+                        cell.config({'background': 'White'})
 
                 cell.lift()
 
@@ -238,3 +253,14 @@ class EntryTable(tk.Frame):
                     v = vals[col].strip()
                     cell.text.set(v)
 
+
+color_map = {
+    '0': 'Blue',
+    '30': 'Green',
+    '45': 'Green',
+    '60': 'Green',
+    '90': 'Red'
+}
+
+def map_color(orientation):
+    '''maps the ORIENTATION to a color'''
