@@ -72,7 +72,7 @@ class LaminateMaker(tk.Frame):
         self.bind_all('<Alt-KeyRelease-m>', self.table.mirror_selected_rows)
 
 
-    def close_event(self, event):
+    def close_event(self, event=None):
         self.master.quit()
 
 
