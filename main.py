@@ -13,6 +13,8 @@ class LaminateMaker(tk.Frame):
 
     def initialize_ui(self):
         '''Initialize the user interface'''
+        self.master.title('Laminate Maker')
+
         # table
         headers = ['Layer', 'Orientation', 'Thickness', 'Material']
         self.table = EntryTable(self.master, headers=headers, rows=4)
@@ -24,7 +26,11 @@ class LaminateMaker(tk.Frame):
 
         # overall layout
         self.table.grid(row=0, column=0, sticky='nwe')
-        self.bottom_frame.grid(row=2, column=0, sticky='we')
+        self.bottom_frame.grid(row=1, column=0, sticky='we')
+
+        self.master.rowconfigure(0, weight=1)
+        self.master.columnconfigure(0, weight=1)
+        self.master.minsize(1, 1)
 
         # top-level menu
         menubar = tk.Menu(self.master)
@@ -70,14 +76,7 @@ class LaminateMaker(tk.Frame):
         self.master.quit()
 
 
-root = tk.Tk()
-root.title('Laminate Maker')
-
-for x in range(1):
-    root.columnconfigure(x, weight=1)
-for x in range(1):
-    root.rowconfigure(x, weight=1)
-root.minsize(1, 1)
-
-app = LaminateMaker(master=root)
-app.mainloop()
+if __name__ == '__main__':
+    root = tk.Tk()
+    app = LaminateMaker(master=root)
+    app.mainloop()
