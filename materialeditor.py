@@ -28,8 +28,6 @@ class MaterialEditor(tk.Frame):
         values = [''] * 4
         self.lamina_props = BaseParametersFrame(
             self.master, zip(params, operators, values))
-        # for varname in params:
-        #     self.params.append(InputParameterFrame(self.master, varname, '=', ''))
 
         # bottom frame
         self.bottom_frame = tk.Frame(self.master)
@@ -39,8 +37,6 @@ class MaterialEditor(tk.Frame):
         # overall layout
         self.top_frame.grid(row=0, column=0, sticky='nwe')
         self.lamina_props.grid(row=1, column=0, sticky='we')
-        # for i, param in enumerate(self.params):
-        #     param.grid(row=i+1, column=0, sticky='nwe')
         self.bottom_frame.grid(row=None, column=0, sticky='we')
 
         self.master.rowconfigure(0, weight=1)
@@ -84,18 +80,28 @@ class BaseParametersFrame(tk.Frame):
         '''Initialize the parameters
         params is a tuple: (varname, operator, value)
         e.g. ('E1', '=', '100')'''
-        super().__init__(parent)
+        super().__init__(parent, background='yellow', borderwidth=15)
 
         # make widgets
         self._widgets: InputParameterFrame = []
         for var, op, val in params:
             self._widgets.append(
-                InputParameterFrame(self.master, var, op, val)
+                InputParameterFrame(self, var, op, val)
                 )
 
         # grid widgets
         for param in self._widgets:
             param.grid(row=None, column=0, sticky='nwe')
+
+
+    def get(self, key):
+        '''Gets the value of the KEY variable name'''
+        for widget in self._widgets:
+            if widget.varname == key:
+                return widget.value
+        
+        # if the widget key is not found
+        raise ValueError(f'Widget with varname "{key}" was not found')
         
 
 
