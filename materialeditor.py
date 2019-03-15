@@ -14,20 +14,29 @@ class MaterialEditor(tk.Frame):
         self.master.title('Material Editor')
 
         # material title
-        self.top_frame = tk.Frame(self.master)
+        self.top_frame = tk.Frame(self.master, borderwidth=1, relief='solid', pady=5)
         self.title = tk.Label(self.top_frame, text='Material Name')
         self.name_entry = tk.Entry(self.top_frame)
         self.title.grid(row=0, column=0, sticky='w')
-        self.name_entry.grid(row=0, column=1, sticky='w')
+        self.name_entry.grid(row=0, column=1, sticky='we')
+        self.top_frame.columnconfigure(1, weight=1)
 
-        # parameter entry
+        # lamina properties entry
+        self.lamina_props = LaminaLevelParams(self.master)
+        # varnames = ['E1', 'E2', 'G12', 'v12']
+        # operators = ['='] * 4
+        # values = [''] * 4
+        # lamina_params = zip(varnames, operators, values)
+        # self.lamina_props = BaseParametersFrame(
+        #     self.master, lamina_params)
 
-        self.params = []
-        params = ['E1', 'E2', 'G12', 'v12']
-        operators = ['='] * 4
-        values = [''] * 4
-        self.lamina_props = BaseParametersFrame(
-            self.master, zip(params, operators, values))
+        # mixture properties entry
+        varnames = ['Ef', 'Em', 'Nu_f', 'Nu_m', 'Vf']
+        operators = ['='] * 5
+        values = [''] * 5
+        mixture_params = zip(varnames, operators, values)
+        self.mixture_props = BaseParametersFrame(
+            self.master, mixture_params)
 
         # bottom frame
         self.bottom_frame = tk.Frame(self.master)
@@ -35,8 +44,9 @@ class MaterialEditor(tk.Frame):
         self.status_bar.grid(row=0, column=1, sticky='w')
 
         # overall layout
-        self.top_frame.grid(row=0, column=0, sticky='nwe')
-        self.lamina_props.grid(row=1, column=0, sticky='we')
+        self.top_frame.grid(row=0, column=0, columnspan=2, sticky='nwe')
+        self.lamina_props.grid(row=1, column=1, sticky='nwe')
+        self.mixture_props.grid(row=1, column=0, sticky='nwe')
         self.bottom_frame.grid(row=None, column=0, sticky='we')
 
         self.master.rowconfigure(0, weight=1)
@@ -80,7 +90,7 @@ class BaseParametersFrame(tk.Frame):
         '''Initialize the parameters
         params is a tuple: (varname, operator, value)
         e.g. ('E1', '=', '100')'''
-        super().__init__(parent, background='yellow', borderwidth=15)
+        super().__init__(parent, borderwidth=2, relief='solid')
 
         # make widgets
         self._widgets: InputParameterFrame = []
@@ -94,14 +104,84 @@ class BaseParametersFrame(tk.Frame):
             param.grid(row=None, column=0, sticky='nwe')
 
 
-    def get(self, key):
-        '''Gets the value of the KEY variable name'''
+    def get_widget(self, key):
+        '''Gets the widget of the KEY variable name'''
         for widget in self._widgets:
             if widget.varname == key:
-                return widget.value
-        
+                return widget
+
         # if the widget key is not found
         raise ValueError(f'Widget with varname "{key}" was not found')
+
+
+    def get_value(self, key):
+        '''Gets the value of the KEY variable name'''
+        widget = self.get_widget(key)
+        return widget.value
+        
+        
+
+
+class LaminaLevelParams(BaseParametersFrame):
+    '''Frame for the lamina level frame
+    Includes: E1, E2, G12, v12
+    Computes: v21'''
+
+    def __init__(self, parent):
+        '''Make a frame to input the lamina level parameters'''
+
+        varnames = ['E1', 'E2', 'G12', 'v12']
+        operators = ['='] * 4
+        values = [''] * 4
+        lamina_params = zip(varnames, operators, values)
+
+        super().__init__(parent, lamina_params)
+
+    
+    @property
+    def E1(self):
+        return self.get_value('E1')
+
+
+    @E1.setter
+    def E1(self, value):
+        widget = self.get_widget('E1')
+        widget.value = value
+
+
+    @property
+    def E2(self):
+        return self.get_value('E2')
+
+
+    @E2.setter
+    def E2(self, value):
+        widget = self.get_widget('E2')
+        widget.value = value
+
+
+    @property
+    def G12(self):
+        return self.get_value('G12')
+
+
+    @G12.setter
+    def G12(self, value):
+        widget = self.get_widget('G12')
+        widget.value = value
+
+
+    @property
+    def v12(self):
+        return self.get_value('v12')
+
+
+    @v12.setter
+    def v12(self, value):
+        widget = self.get_widget('v12')
+        widget.value = value
+
+
         
 
 
