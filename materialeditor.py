@@ -1,5 +1,6 @@
 
 import tkinter as tk
+import json
 
 import mixtures as mix
 
@@ -17,17 +18,40 @@ class MaterialEditor(tk.Frame):
         # material title
         self.top_frame = tk.Frame(self.master, borderwidth=1, relief='solid', pady=5)
         self.title = tk.Label(self.top_frame, text='Material Name')
-        self.name_entry = tk.Entry(self.top_frame)
+        txt = tk.StringVar()
+        self.name_entry = tk.Entry(self.top_frame, textvariable=txt)
+        self.name_entry.text = txt
         self.title.grid(row=0, column=0, sticky='w')
         self.name_entry.grid(row=0, column=1, sticky='we')
         self.top_frame.columnconfigure(1, weight=1)
 
+        # make a radio button value to track
+        self.radio = tk.StringVar()
+        self.radio.set('lamina')
+
         # lamina properties entry
-        self.lamina_props = LaminaLevelParams(self.master)
+        self.lamina_frame = tk.Frame(self.master, borderwidth=1, relief='raised')
+        self.lamina_radio = tk.Radiobutton(
+            self.lamina_frame, 
+            text='Lamina Level Properties', 
+            variable=self.radio, 
+            value='lamina')
+        self.lamina_radio.value = 'lamina'
+        self.lamina_props = LaminaLevelParams(self.lamina_frame)
+        self.lamina_radio.grid()
+        self.lamina_props.grid()
 
         # mixture properties entry
-        # TODO use the imported mixture equations to update lamina props
-        self.mixture_props = FiberLevelParams(self.master)
+        self.mixture_frame = tk.Frame(self.master, borderwidth=1, relief='raised')
+        self.mixture_radio = tk.Radiobutton(
+            self.mixture_frame,
+            text='Fiber/Matrix Properties', 
+            variable=self.radio, 
+            value='mixture')
+        self.mixture_radio.value = 'mixture'
+        self.mixture_props = FiberLevelParams(self.mixture_frame)
+        self.mixture_radio.grid()
+        self.mixture_props.grid()
 
         # bottom frame
         self.bottom_frame = tk.Frame(self.master)
@@ -36,8 +60,8 @@ class MaterialEditor(tk.Frame):
 
         # overall layout
         self.top_frame.grid(row=0, column=0, columnspan=2, sticky='nwe')
-        self.lamina_props.grid(row=1, column=1, sticky='nwe')
-        self.mixture_props.grid(row=1, column=0, sticky='nwe')
+        self.lamina_frame.grid(row=1, column=1, sticky='nwe')
+        self.mixture_frame.grid(row=1, column=0, sticky='nwe')
         self.bottom_frame.grid(row=None, column=0, sticky='we')
 
         self.master.rowconfigure(0, weight=1)
@@ -49,8 +73,8 @@ class MaterialEditor(tk.Frame):
 
         # file pulldown
         filemenu = tk.Menu(menubar, tearoff=0)
-        filemenu.add_command(label='Save', command=lambda: print('save'))
-        filemenu.add_command(label='Open', command=lambda: print('open'))
+        filemenu.add_command(label='Save', command=self.save, accelerator='Ctrl+S')
+        filemenu.add_command(label='Open', command=lambda: print('open'), accelerator='Ctrl+O')
         filemenu.add_separator()
         filemenu.add_command(label='Quit', command=self.close_event, accelerator='Ctrl+W')
         menubar.add_cascade(label='File', menu=filemenu)
@@ -72,6 +96,68 @@ class MaterialEditor(tk.Frame):
 
     def close_event(self, event=None):
         self.master.quit()
+
+
+    def save(self, event=None):
+        '''Writes the data in this form out to a file'''
+        # main material dict
+        mat = {'name': self.name_entry.text.get()}
+
+        # modulus dict
+        if self.radio == 'lamina':
+            enabled_mod = self.lamina_props
+        else:
+            enabled_mod = self.mixture_props.lamina
+        
+        mod = {
+            'E1': enabled_mod.E1,
+            'E2': enabled_mod.E2,
+            'G12': enabled_mod.G12,
+            'v12': enabled_mod.v12,
+            'v21': enabled_mod.v21
+        }
+
+        # save all options for importing later
+        all_options = [
+            {
+                'enabled': self.radio.get() == self.lamina_radio.value,
+                'type': 'lamina',
+                'E1': self.lamina_props.E1,
+                'E2': self.lamina_props.E2,
+                'G12': self.lamina_props.G12,
+                'v12': self.lamina_props.v12,
+                'v21': self.lamina_props.v21
+            },
+
+            {
+                'enabled': self.radio.get() == self.mixture_radio.value,
+                'type': 'mixture',
+                'Ef': self.mixture_props.Ef,
+                'Em': self.mixture_props.Em,
+                'vf': self.mixture_props.vf,
+                'vm': self.mixture_props.vm,
+                'Vf': self.mixture_props.Vf,
+                'Vm': self.mixture_props.Vm,
+                'E1': self.mixture_props.lamina.E1,
+                'E2': self.mixture_props.lamina.E2,
+                'G12': self.mixture_props.lamina.G12,
+                'v12': self.mixture_props.lamina.v12,
+                'v21': self.mixture_props.lamina.v21
+            }
+        ]
+
+        # put it all together
+        mod['all_options'] = all_options
+        mat['modulus'] = mod
+
+        # write
+        with open('test_save.txt', 'w') as f:
+            json.dump(mat, f, indent=4)
+
+
+    def open(self, event=None):
+        '''Loads material data from a file'''
+        pass
 
 
 class BaseParametersFrame(tk.Frame):
@@ -222,6 +308,9 @@ class FiberLevelParams(BaseParametersFrame):
         self.lamina = LaminaLevelParams(self)
         self.lamina.grid()
 
+        # matrix fraction is readonly
+        self.get_widget('Vm')._value.config(state='readonly')
+
         # when user leaves a mixture field, update stuff
         for entry in self.entries:
             entry.bind('<FocusOut>', self.recalculate)
@@ -250,10 +339,8 @@ class FiberLevelParams(BaseParametersFrame):
             vf = float(self.vf)
             vm = float(self.vm)
         except Exception as e:
-            print(e)
             pass
         else:
-            print('mixing')
             mixed = mix.EffectiveLamina(Ef, Em, Vf, Vm, vf, vm)
             self.lamina.E1 = mixed.E1
             self.lamina.E2 = mixed.E2
