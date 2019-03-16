@@ -118,6 +118,11 @@ class BaseParametersFrame(tk.Frame):
         '''Gets the value of the KEY variable name'''
         widget = self.get_widget(key)
         return widget.value
+
+
+    @property
+    def entries(self):
+        return [frame._value for frame in self._widgets]
         
         
 
@@ -130,12 +135,28 @@ class LaminaLevelParams(BaseParametersFrame):
     def __init__(self, parent):
         '''Make a frame to input the lamina level parameters'''
 
-        varnames = ['E1', 'E2', 'G12', 'v12']
-        operators = ['='] * 4
-        values = [''] * 4
+        varnames = ['E1', 'E2', 'G12', 'v12', 'v21']
+        operators = ['='] * 5
+        values = [''] * 5
         lamina_params = zip(varnames, operators, values)
 
         super().__init__(parent, lamina_params)
+
+        for entry in self.entries:
+            entry.bind('<FocusOut>', self.on_focus_out)
+
+        v21 = self.get_widget('v21')
+        v21._value.config(state='readonly')
+
+
+    def on_focus_out(self, event=None):
+        '''When an entry is focused out on.
+        Recalculates the v21 value'''
+        try:
+            self.v21 = float(self.E1) / float(self.E2) * float(self.v12)
+        except:
+            self.v21 = 'n/a'
+
 
     
     @property
@@ -182,6 +203,16 @@ class LaminaLevelParams(BaseParametersFrame):
         widget.value = value
 
 
+    @property
+    def v21(self):
+        return self.get_value('v21')
+
+
+    @v21.setter
+    def v21(self, value):
+        widget = self.get_widget('v21')
+        widget.value = value
+        # raise AttributeError('Cannot write to v21 parameter')
         
 
 
@@ -225,7 +256,7 @@ class InputParameterFrame(tk.Frame):
     @varname.setter
     def varname(self, value):
         '''Name of this variable'''
-        return self._varname.text.set(value)
+        self._varname.text.set(value)
 
 
     @property
@@ -237,7 +268,7 @@ class InputParameterFrame(tk.Frame):
     @operator.setter
     def operator(self, value):
         '''Name of this variable's operator'''
-        return self._operator.text.set(value)
+        self._operator.text.set(value)
 
 
     @property
@@ -249,7 +280,12 @@ class InputParameterFrame(tk.Frame):
     @value.setter
     def value(self, value):
         '''Name of this variable's value'''
-        return self._value.text.set(value)
+        self._operator_long_value = value
+        try:
+            disp_val = '{:.3f}'.format(value)
+        except:
+            disp_val = value
+        self._value.text.set(disp_val)
 
 
     def widgets(self):
