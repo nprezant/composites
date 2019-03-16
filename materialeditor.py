@@ -1,5 +1,6 @@
 
 import tkinter as tk
+from tkinter import filedialog
 import json
 
 import mixtures as mix
@@ -74,7 +75,7 @@ class MaterialEditor(tk.Frame):
         # file pulldown
         filemenu = tk.Menu(menubar, tearoff=0)
         filemenu.add_command(label='Save', command=self.save, accelerator='Ctrl+S')
-        filemenu.add_command(label='Open', command=lambda: print('open'), accelerator='Ctrl+O')
+        filemenu.add_command(label='Open', command=self.open, accelerator='Ctrl+O')
         filemenu.add_separator()
         filemenu.add_command(label='Quit', command=self.close_event, accelerator='Ctrl+W')
         menubar.add_cascade(label='File', menu=filemenu)
@@ -92,6 +93,8 @@ class MaterialEditor(tk.Frame):
 
         # keypress bindings
         self.bind_all('<Control-KeyRelease-w>', self.close_event)
+        self.bind_all('<Control-KeyRelease-s>', self.save)
+        self.bind_all('<Control-KeyRelease-o>', self.open)
 
 
     def close_event(self, event=None):
@@ -100,6 +103,21 @@ class MaterialEditor(tk.Frame):
 
     def save(self, event=None):
         '''Writes the data in this form out to a file'''
+
+        # file path
+        filename = filedialog.asksaveasfilename(
+            title = 'Save file as',
+            initialfile = self.name_entry.text.get(),
+            filetypes = (
+                ('json files','*.json'),
+                ('all files','*.*')))
+
+        if filename == '':
+            return
+            
+        if not filename[-5:] == '.json':
+            filename = filename + '.json'
+
         # main material dict
         mat = {'name': self.name_entry.text.get()}
 
@@ -117,47 +135,80 @@ class MaterialEditor(tk.Frame):
             'v21': enabled_mod.v21
         }
 
-        # save all options for importing later
-        all_options = [
-            {
-                'enabled': self.radio.get() == self.lamina_radio.value,
-                'type': 'lamina',
-                'E1': self.lamina_props.E1,
-                'E2': self.lamina_props.E2,
-                'G12': self.lamina_props.G12,
-                'v12': self.lamina_props.v12,
-                'v21': self.lamina_props.v21
-            },
+        # save lamina options
+        lam = {
+            'enabled': self.radio.get() == self.lamina_radio.value,
+            'E1': self.lamina_props.E1,
+            'E2': self.lamina_props.E2,
+            'G12': self.lamina_props.G12,
+            'v12': self.lamina_props.v12,
+            'v21': self.lamina_props.v21
+        }
 
-            {
-                'enabled': self.radio.get() == self.mixture_radio.value,
-                'type': 'mixture',
-                'Ef': self.mixture_props.Ef,
-                'Em': self.mixture_props.Em,
-                'vf': self.mixture_props.vf,
-                'vm': self.mixture_props.vm,
-                'Vf': self.mixture_props.Vf,
-                'Vm': self.mixture_props.Vm,
-                'E1': self.mixture_props.lamina.E1,
-                'E2': self.mixture_props.lamina.E2,
-                'G12': self.mixture_props.lamina.G12,
-                'v12': self.mixture_props.lamina.v12,
-                'v21': self.mixture_props.lamina.v21
-            }
-        ]
+        mix = {
+            'enabled': self.radio.get() == self.mixture_radio.value,
+            'Ef': self.mixture_props.Ef,
+            'Em': self.mixture_props.Em,
+            'vf': self.mixture_props.vf,
+            'vm': self.mixture_props.vm,
+            'Vf': self.mixture_props.Vf,
+            'Vm': self.mixture_props.Vm,
+            'E1': self.mixture_props.lamina.E1,
+            'E2': self.mixture_props.lamina.E2,
+            'G12': self.mixture_props.lamina.G12,
+            'v12': self.mixture_props.lamina.v12,
+            'v21': self.mixture_props.lamina.v21
+        }
+
+        # add radio option to output
+        mod['radio'] = self.radio.get()
 
         # put it all together
-        mod['all_options'] = all_options
+        mod['lamina'] = lam
+        mod['mixture'] = mix
         mat['modulus'] = mod
 
         # write
-        with open('test_save.txt', 'w') as f:
+        with open(filename, 'w') as f:
             json.dump(mat, f, indent=4)
 
 
     def open(self, event=None):
         '''Loads material data from a file'''
-        pass
+        filename = filedialog.askopenfilename(
+            title = 'Select file to open',
+            filetypes = (
+                ('json files', '*.json'),
+                ('all files','*.*')))
+        if filename == '': return
+
+        with open(filename, 'r') as f:
+            mat = json.load(f)
+
+        # set material name
+        self.name_entry.text.set(mat['name'])
+
+        # set radio button
+        self.radio = mat['modulus']['radio']
+
+        # set lamina properties
+        lam = mat['modulus']['lamina']
+        self.lamina_props.E1 = lam['E1']
+        self.lamina_props.E2 = lam['E2']
+        self.lamina_props.G12 = lam['G12']
+        self.lamina_props.v12 = lam['v12']
+
+        # set mixture properties
+        mix = mat['modulus']['mixture']
+        self.mixture_props.Ef = mix['Ef']
+        self.mixture_props.Em = mix['Em']
+        self.mixture_props.vf = mix['vf']
+        self.mixture_props.vm = mix['vm']
+        self.mixture_props.Vf = mix['Vf']
+
+        # recalculate the fields
+        self.lamina_props.recalculate()
+        self.mixture_props.recalculate()
 
 
 class BaseParametersFrame(tk.Frame):
