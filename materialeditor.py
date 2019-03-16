@@ -281,7 +281,7 @@ class LaminaLevelParams(BaseParametersFrame):
         '''When an entry is focused out on.
         Recalculates the v21 value'''
         try:
-            self.v21 = float(self.E1) / float(self.E2) * float(self.v12)
+            self.v21 = float(self.E2) / float(self.E1) * float(self.v12)
         except:
             self.v21 = 'n/a'
 
