@@ -17,7 +17,7 @@ class MaterialEditor(tk.Frame):
         self.master.title('Material Editor')
 
         # material title
-        self.top_frame = tk.Frame(self.master, borderwidth=1, relief='solid', pady=5)
+        self.top_frame = tk.Frame(self.master, borderwidth=1, relief='raised', pady=5)
         self.title = tk.Label(self.top_frame, text='Material Name')
         txt = tk.StringVar()
         self.name_entry = tk.Entry(self.top_frame, textvariable=txt)
@@ -65,9 +65,9 @@ class MaterialEditor(tk.Frame):
         self.mixture_frame.grid(row=1, column=0, sticky='nwe')
         self.bottom_frame.grid(row=None, column=0, sticky='we')
 
-        self.master.rowconfigure(0, weight=1)
-        self.master.columnconfigure(0, weight=1)
-        self.master.minsize(1, 1)
+        # self.master.rowconfigure(0, weight=1)
+        # self.master.columnconfigure(0, weight=1)
+        self.master.minsize(3, 2)
 
         # top-level menu
         menubar = tk.Menu(self.master)
@@ -114,7 +114,7 @@ class MaterialEditor(tk.Frame):
 
         if filename == '':
             return
-            
+
         if not filename[-5:] == '.json':
             filename = filename + '.json'
 
@@ -218,7 +218,7 @@ class BaseParametersFrame(tk.Frame):
         '''Initialize the parameters
         params is a tuple: (varname, operator, value)
         e.g. ('E1', '=', '100')'''
-        super().__init__(parent, borderwidth=2, relief='solid')
+        super().__init__(parent)
 
         # make widgets
         self._widgets: InputParameterFrame = []
