@@ -1,6 +1,7 @@
 
 import tkinter as tk
 
+# TODO import mixtures equations
 
 class MaterialEditor(tk.Frame):
     '''GUI to make the laminates'''
@@ -23,20 +24,10 @@ class MaterialEditor(tk.Frame):
 
         # lamina properties entry
         self.lamina_props = LaminaLevelParams(self.master)
-        # varnames = ['E1', 'E2', 'G12', 'v12']
-        # operators = ['='] * 4
-        # values = [''] * 4
-        # lamina_params = zip(varnames, operators, values)
-        # self.lamina_props = BaseParametersFrame(
-        #     self.master, lamina_params)
 
         # mixture properties entry
-        varnames = ['Ef', 'Em', 'Nu_f', 'Nu_m', 'Vf']
-        operators = ['='] * 5
-        values = [''] * 5
-        mixture_params = zip(varnames, operators, values)
-        self.mixture_props = BaseParametersFrame(
-            self.master, mixture_params)
+        # TODO use the imported mixture equations to update lamina props
+        self.mixture_props = FiberLevelParams(self.master)
 
         # bottom frame
         self.bottom_frame = tk.Frame(self.master)
@@ -136,8 +127,8 @@ class LaminaLevelParams(BaseParametersFrame):
         '''Make a frame to input the lamina level parameters'''
 
         varnames = ['E1', 'E2', 'G12', 'v12', 'v21']
-        operators = ['='] * 5
-        values = [''] * 5
+        operators = ['='] * len(varnames)
+        values = [''] * len(varnames)
         lamina_params = zip(varnames, operators, values)
 
         super().__init__(parent, lamina_params)
@@ -156,7 +147,6 @@ class LaminaLevelParams(BaseParametersFrame):
             self.v21 = float(self.E1) / float(self.E2) * float(self.v12)
         except:
             self.v21 = 'n/a'
-
 
     
     @property
@@ -212,7 +202,77 @@ class LaminaLevelParams(BaseParametersFrame):
     def v21(self, value):
         widget = self.get_widget('v21')
         widget.value = value
-        # raise AttributeError('Cannot write to v21 parameter')
+
+
+class FiberLevelParams(BaseParametersFrame):
+    '''Frame for the fiber level frame
+    Includes: Ef, Em, vf, vm, Vf
+    Computes: E1, E2, G12, v12, v21'''
+
+    def __init__(self, parent):
+        '''Make a frame to input the fiber level parameters'''
+
+        varnames = ['Ef', 'Em', 'vf', 'vm', 'Vf']
+        operators = ['='] * len(varnames)
+        values = [''] * len(varnames)
+        lamina_params = zip(varnames, operators, values)
+
+        super().__init__(parent, lamina_params)
+
+    
+    @property
+    def Ef(self):
+        return self.get_value('Ef')
+
+
+    @Ef.setter
+    def Ef(self, value):
+        widget = self.get_widget('Ef')
+        widget.value = value
+
+
+    @property
+    def Em(self):
+        return self.get_value('Em2')
+
+
+    @Em.setter
+    def Em(self, value):
+        widget = self.get_widget('Em')
+        widget.value = value
+
+
+    @property
+    def vf(self):
+        return self.get_value('vf')
+
+
+    @vf.setter
+    def vf(self, value):
+        widget = self.get_widget('vf')
+        widget.value = value
+
+
+    @property
+    def vm(self):
+        return self.get_value('vm')
+
+
+    @vm.setter
+    def vm(self, value):
+        widget = self.get_widget('vm')
+        widget.value = value
+
+
+    @property
+    def Vf(self):
+        return self.get_value('Vf')
+
+
+    @Vf.setter
+    def Vf(self, value):
+        widget = self.get_widget('Vf')
+        widget.value = value
         
 
 
@@ -274,13 +334,16 @@ class InputParameterFrame(tk.Frame):
     @property
     def value(self):
         '''Name of this variable's value'''
-        return self._value.text.get()
+        try:
+            return self._long_value
+        except:
+            return self._value.text.get()
 
 
     @value.setter
     def value(self, value):
         '''Name of this variable's value'''
-        self._operator_long_value = value
+        self._long_value = value
         try:
             disp_val = '{:.3f}'.format(value)
         except:
