@@ -1,7 +1,7 @@
 
 import tkinter as tk
 
-# TODO import mixtures equations
+import mixtures as mix
 
 class MaterialEditor(tk.Frame):
     '''GUI to make the laminates'''
@@ -134,13 +134,13 @@ class LaminaLevelParams(BaseParametersFrame):
         super().__init__(parent, lamina_params)
 
         for entry in self.entries:
-            entry.bind('<FocusOut>', self.on_focus_out)
+            entry.bind('<FocusOut>', self.recalculate)
 
         v21 = self.get_widget('v21')
         v21._value.config(state='readonly')
 
 
-    def on_focus_out(self, event=None):
+    def recalculate(self, event=None):
         '''When an entry is focused out on.
         Recalculates the v21 value'''
         try:
@@ -212,12 +212,54 @@ class FiberLevelParams(BaseParametersFrame):
     def __init__(self, parent):
         '''Make a frame to input the fiber level parameters'''
 
-        varnames = ['Ef', 'Em', 'vf', 'vm', 'Vf']
+        varnames = ['Ef', 'Em', 'vf', 'vm', 'Vf', 'Vm']
         operators = ['='] * len(varnames)
         values = [''] * len(varnames)
         lamina_params = zip(varnames, operators, values)
 
         super().__init__(parent, lamina_params)
+
+        self.lamina = LaminaLevelParams(self)
+        self.lamina.grid()
+
+        # when user leaves a mixture field, update stuff
+        for entry in self.entries:
+            entry.bind('<FocusOut>', self.recalculate)
+
+        # lamina properties are read only here
+        for entry in self.lamina.entries:
+            entry.config(state='readonly')
+
+
+    def recalculate(self, event=None):
+        '''When an entry is focused out on.
+        Recalculates the lamina level values'''
+
+        # compute the matrix volume fraction
+        try:
+            self.Vm = 1 - float(self.Vf)
+        except:
+            self.Vm = 'n/a'
+
+        # mix the parameters into a lamina if possible
+        try:
+            Ef = float(self.Ef)
+            Em = float(self.Em)
+            Vf = float(self.Vf)
+            Vm = float(self.Vm)
+            vf = float(self.vf)
+            vm = float(self.vm)
+        except Exception as e:
+            print(e)
+            pass
+        else:
+            print('mixing')
+            mixed = mix.EffectiveLamina(Ef, Em, Vf, Vm, vf, vm)
+            self.lamina.E1 = mixed.E1
+            self.lamina.E2 = mixed.E2
+            self.lamina.G12 = mixed.G12
+            self.lamina.v12 = mixed.G12
+            self.lamina.recalculate()
 
     
     @property
@@ -233,7 +275,7 @@ class FiberLevelParams(BaseParametersFrame):
 
     @property
     def Em(self):
-        return self.get_value('Em2')
+        return self.get_value('Em')
 
 
     @Em.setter
@@ -273,6 +315,17 @@ class FiberLevelParams(BaseParametersFrame):
     def Vf(self, value):
         widget = self.get_widget('Vf')
         widget.value = value
+
+
+    @property
+    def Vm(self):
+        return self.get_value('Vm')
+
+
+    @Vm.setter
+    def Vm(self, value):
+        widget = self.get_widget('Vm')
+        widget.value = value
         
 
 
@@ -298,7 +351,7 @@ class InputParameterFrame(tk.Frame):
         # variable value
         txt = tk.StringVar()
         txt.set(value)
-        self._value = tk.Entry(self, textvariable=txt, borderwidth=0, width=10)
+        self._value = tk.Entry(self, textvariable=txt, borderwidth=1, width=10, relief='sunken')
         self._value.text = txt
 
         # grid positions
