@@ -88,11 +88,6 @@ for layer in layers:
         layer.G12,
         layer.v12
     )
-    # layer.Q_nominal = np.array([
-    #     [120, 5, 0],
-    #     [5, 20, 0],
-    #     [0, 0, 15]
-    # ])
     layer.Q = rotate_Q(
         layer.Q_nominal, 
         layer.orientation * np.pi / 180
