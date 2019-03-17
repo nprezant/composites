@@ -413,8 +413,8 @@ class EntryTable(tk.Frame):
         filename = filedialog.askopenfilename(
             title = 'Select file to open',
             filetypes = (
-                ('text files','*.txt'),
                 ('csv files', '*.csv'),
+                ('text files','*.txt'),
                 ('all files','*.*')))
         if filename == '': return
         self.select_all()
