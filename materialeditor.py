@@ -8,6 +8,9 @@ import numpy as np
 import mixtures as mix
 from stiffness import Q2props, make_Q
 
+# horizontal spacing
+HSPACE = 20
+
 class MaterialEditor(tk.Frame):
     '''GUI to make the laminates'''
     def __init__(self, master=None):
@@ -42,7 +45,7 @@ class MaterialEditor(tk.Frame):
             value='lamina')
         self.lamina_radio.value = 'lamina'
         self.lamina_input = LaminaInputFrame(self.lamina_frame)
-        self.lamina_radio.grid()
+        self.lamina_radio.grid(sticky='w')
         self.lamina_input.grid()
 
         # mixture properties entry
@@ -54,7 +57,7 @@ class MaterialEditor(tk.Frame):
             value='mixture')
         self.mixture_radio.value = 'mixture'
         self.mixture_input = FiberInputFrame(self.mixture_frame)
-        self.mixture_radio.grid()
+        self.mixture_radio.grid(sticky='w')
         self.mixture_input.grid()
 
         # Q matrix properties entry
@@ -66,7 +69,7 @@ class MaterialEditor(tk.Frame):
             value='q')
         self.q_radio.value = 'q'
         self.q_input = QInputFrame(self.q_frame)
-        self.q_radio.grid()
+        self.q_radio.grid(sticky='w')
         self.q_input.grid()
 
         # bottom frame
@@ -77,8 +80,8 @@ class MaterialEditor(tk.Frame):
         # overall layout
         self.top_frame.grid(row=0, column=0, columnspan=3, sticky='nwe')
         self.lamina_frame.grid(row=1, column=0, sticky='nwe')
-        self.mixture_frame.grid(row=1, column=1, sticky='nwe')
-        self.q_frame.grid(row=1, column=2, sticky='nwe')
+        self.mixture_frame.grid(row=2, column=0, sticky='nwe')
+        self.q_frame.grid(row=3, column=0, sticky='nwe')
         self.bottom_frame.grid(row=None, column=0, sticky='we')
 
         # self.master.rowconfigure(0, weight=1)
@@ -501,8 +504,11 @@ class QInputFrame(tk.Frame):
         self.qmat = QParamsFrame(self)
         self.lamina = LaminaParamsFrame(self)
 
-        self.qmat.grid()
-        self.lamina.grid()
+        self.qmat.grid(row=0, column=0, sticky='nw')
+        self.lamina.grid(row=0, column=2, sticky='nw')
+
+        self.columnconfigure(1, minsize=HSPACE)
+        self.columnconfigure(3, minsize=HSPACE)
 
         # when user leaves a mixture field, update stuff
         for entry in self.qmat.entries:
@@ -543,8 +549,11 @@ class LaminaInputFrame(tk.Frame):
         self.lamina = LaminaParamsFrame(self)
         self.qmat = QParamsFrame(self)
 
-        self.lamina.grid()
-        self.qmat.grid()
+        self.lamina.grid(row=0, column=0, sticky='nw')
+        self.qmat.grid(row=0, column=2, sticky='nw')
+
+        self.columnconfigure(1, minsize=HSPACE)
+        self.columnconfigure(3, minsize=HSPACE)
 
         # when user leaves a lamina field, update stuff
         for entry in self.lamina.entries:
@@ -587,9 +596,13 @@ class FiberInputFrame(tk.Frame):
         self.lamina = LaminaParamsFrame(self)
         self.qmat = QParamsFrame(self)
 
-        self.fiber.grid()
-        self.lamina.grid()
-        self.qmat.grid()
+        self.fiber.grid(row=0, column=0, sticky='nw')
+        self.lamina.grid(row=0, column=2, sticky='nw')
+        self.qmat.grid(row=0, column=4, sticky='nw')
+
+        self.columnconfigure(1, minsize=HSPACE)
+        self.columnconfigure(3, minsize=HSPACE)
+        self.columnconfigure(5, minsize=HSPACE)
 
         # when user leaves a fiber field, update stuff
         for entry in self.fiber.entries:
