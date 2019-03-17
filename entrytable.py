@@ -393,8 +393,8 @@ class EntryTable(tk.Frame):
         filename = filedialog.asksaveasfilename(
             title = 'Save file as',
             filetypes = (
-                ('text files','*.txt'),
                 ('csv files', '*.csv'),
+                ('text files','*.txt'),
                 ('all files','*.*')))
         if filename == '': return
         with open(filename, 'w') as f:
