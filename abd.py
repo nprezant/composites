@@ -30,7 +30,7 @@ class Layer:
 
 layers: Layer = []
 
-laminatefile = 'problem1.csv'
+laminatefile = 'designlib/problem3.csv'
 with open(laminatefile, 'r') as f:
 
     # skip first line
@@ -71,7 +71,7 @@ for layer in layers:
 for layer in layers:
 
     # read json file
-    with open(layer.materialname + '.json', 'r') as f:
+    with open('designlib/' + layer.materialname + '.json', 'r') as f:
         mat = json.load(f)
     
     # assign properties
@@ -79,19 +79,24 @@ for layer in layers:
     layer.E2 = float(mat['modulus']['E2'])
     layer.G12 = float(mat['modulus']['G12'])
     layer.v12 = float(mat['modulus']['v12'])
+    try:
+        layer.Q_nominal = np.array(mat['modulus']['Q'], dtype=float)
+    except:
+        layer.Q_nominal = make_Q(
+            layer.E1,
+            layer.E2,
+            layer.G12,
+            layer.v12
+        )
 
-# find Q matrices of each layer
+# rotate Q matrices of each layer
 for layer in layers:
-    layer.Q_nominal = make_Q(
-        layer.E1,
-        layer.E2,
-        layer.G12,
-        layer.v12
-    )
     layer.Q = rotate_Q(
         layer.Q_nominal, 
         layer.orientation * np.pi / 180
     )
+
+    # set values close to zero equal to zero
     with np.nditer(layer.Q, op_flags=['readwrite']) as it:
         for x in it:
             if abs(x) <= 1e-5:
