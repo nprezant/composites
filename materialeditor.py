@@ -6,7 +6,7 @@ import json
 import numpy as np
 
 import mixtures as mix
-from stiffness import Q2props
+from stiffness import Q2props, make_Q
 
 class MaterialEditor(tk.Frame):
     '''GUI to make the laminates'''
@@ -41,9 +41,9 @@ class MaterialEditor(tk.Frame):
             variable=self.radio, 
             value='lamina')
         self.lamina_radio.value = 'lamina'
-        self.lamina_props = LaminaLevelParams(self.lamina_frame)
+        self.lamina_input = LaminaInputFrame(self.lamina_frame)
         self.lamina_radio.grid()
-        self.lamina_props.grid()
+        self.lamina_input.grid()
 
         # mixture properties entry
         self.mixture_frame = tk.Frame(self.master, borderwidth=1, relief='raised')
@@ -53,9 +53,9 @@ class MaterialEditor(tk.Frame):
             variable=self.radio, 
             value='mixture')
         self.mixture_radio.value = 'mixture'
-        self.mixture_props = FiberLevelParams(self.mixture_frame)
+        self.mixture_input = FiberInputFrame(self.mixture_frame)
         self.mixture_radio.grid()
-        self.mixture_props.grid()
+        self.mixture_input.grid()
 
         # Q matrix properties entry
         self.q_frame = tk.Frame(self.master, borderwidth=1, relief='raised')
@@ -65,9 +65,9 @@ class MaterialEditor(tk.Frame):
             variable=self.radio, 
             value='q')
         self.q_radio.value = 'q'
-        self.q_props = QInputFrame(self.q_frame)
+        self.q_input = QInputFrame(self.q_frame)
         self.q_radio.grid()
-        self.q_props.grid()
+        self.q_input.grid()
 
         # bottom frame
         self.bottom_frame = tk.Frame(self.master)
@@ -139,56 +139,61 @@ class MaterialEditor(tk.Frame):
 
         # modulus dict
         # TODO take off the "lamina" and let it access both lamina and qmat attributes
-        if self.radio == 'lamina':
-            enabled_mod = self.lamina_props
-        elif self.radio == 'mixture':
-            enabled_mod = self.mixture_props.lamina
-        elif self.radio == 'q':
-            enabled_mod = self.q_props.lamina
+        if self.radio.get() == 'lamina':
+            enabled_mod = self.lamina_input
+        elif self.radio.get() == 'mixture':
+            enabled_mod = self.mixture_input
+        elif self.radio.get() == 'q':
+            enabled_mod = self.q_input
         else:
-            raise ValueError('No Radio Button Selected')
+            raise ValueError(f'Radio value not valid: {self.radio.get}')
         
         mod = {
-            'E1': enabled_mod.E1,
-            'E2': enabled_mod.E2,
-            'G12': enabled_mod.G12,
-            'v12': enabled_mod.v12,
-            'v21': enabled_mod.v21
+            'E1': enabled_mod.lamina.E1,
+            'E2': enabled_mod.lamina.E2,
+            'G12': enabled_mod.lamina.G12,
+            'v12': enabled_mod.lamina.v12,
+            'v21': enabled_mod.lamina.v21,
+            'Q': enabled_mod.qmat.Q.tolist()
         }
 
-        # save lamina options
+        # save lamina level input options
         lam = {
             'enabled': self.radio.get() == self.lamina_radio.value,
-            'E1': self.lamina_props.E1,
-            'E2': self.lamina_props.E2,
-            'G12': self.lamina_props.G12,
-            'v12': self.lamina_props.v12,
-            'v21': self.lamina_props.v21
+            'E1': self.lamina_input.lamina.E1,
+            'E2': self.lamina_input.lamina.E2,
+            'G12': self.lamina_input.lamina.G12,
+            'v12': self.lamina_input.lamina.v12,
+            'v21': self.lamina_input.lamina.v21,
+            'Q': self.lamina_input.qmat.Q.tolist()
         }
 
+        # save fiber mixture input options
         mix = {
             'enabled': self.radio.get() == self.mixture_radio.value,
-            'Ef': self.mixture_props.Ef,
-            'Em': self.mixture_props.Em,
-            'vf': self.mixture_props.vf,
-            'vm': self.mixture_props.vm,
-            'Vf': self.mixture_props.Vf,
-            'Vm': self.mixture_props.Vm,
-            'E1': self.mixture_props.lamina.E1,
-            'E2': self.mixture_props.lamina.E2,
-            'G12': self.mixture_props.lamina.G12,
-            'v12': self.mixture_props.lamina.v12,
-            'v21': self.mixture_props.lamina.v21
+            'Ef': self.mixture_input.fiber.Ef,
+            'Em': self.mixture_input.fiber.Em,
+            'vf': self.mixture_input.fiber.vf,
+            'vm': self.mixture_input.fiber.vm,
+            'Vf': self.mixture_input.fiber.Vf,
+            'Vm': self.mixture_input.fiber.Vm,
+            'E1': self.mixture_input.lamina.E1,
+            'E2': self.mixture_input.lamina.E2,
+            'G12': self.mixture_input.lamina.G12,
+            'v12': self.mixture_input.lamina.v12,
+            'v21': self.mixture_input.lamina.v21,
+            'Q': self.mixture_input.qmat.Q.tolist()
         }
 
+        # save q input options
         qmat = {
             'enabled': self.radio.get() == self.q_radio.value,
-            'E1': self.q_props.lamina.E1,
-            'E2': self.q_props.lamina.E2,
-            'G12': self.q_props.lamina.G12,
-            'v12': self.q_props.lamina.v12,
-            'v21': self.q_props.lamina.v21,
-            'Q': self.q_props.qmat.Q.tolist()
+            'E1': self.q_input.lamina.E1,
+            'E2': self.q_input.lamina.E2,
+            'G12': self.q_input.lamina.G12,
+            'v12': self.q_input.lamina.v12,
+            'v21': self.q_input.lamina.v21,
+            'Q': self.q_input.qmat.Q.tolist()
         }
 
         # add radio option to output
@@ -227,22 +232,27 @@ class MaterialEditor(tk.Frame):
 
         # set lamina properties
         lam = mat['modulus']['lamina']
-        self.lamina_props.E1 = lam['E1']
-        self.lamina_props.E2 = lam['E2']
-        self.lamina_props.G12 = lam['G12']
-        self.lamina_props.v12 = lam['v12']
+        self.lamina_input.lamina.E1 = lam['E1']
+        self.lamina_input.lamina.E2 = lam['E2']
+        self.lamina_input.lamina.G12 = lam['G12']
+        self.lamina_input.lamina.v12 = lam['v12']
 
         # set mixture properties
         mix = mat['modulus']['mixture']
-        self.mixture_props.Ef = mix['Ef']
-        self.mixture_props.Em = mix['Em']
-        self.mixture_props.vf = mix['vf']
-        self.mixture_props.vm = mix['vm']
-        self.mixture_props.Vf = mix['Vf']
+        self.mixture_input.fiber.Ef = mix['Ef']
+        self.mixture_input.fiber.Em = mix['Em']
+        self.mixture_input.fiber.vf = mix['vf']
+        self.mixture_input.fiber.vm = mix['vm']
+        self.mixture_input.fiber.Vf = mix['Vf']
+
+        # set q matrix properties
+        q = mat['modulus']['qmatrix']['Q']
+        q_np = np.array(q)
+        self.q_input.qmat.Q = q_np
 
         # recalculate the fields
-        self.lamina_props.recalculate()
-        self.mixture_props.recalculate()
+        self.lamina_input.recalculate()
+        self.mixture_input.recalculate()
 
 
 class BaseParametersFrame(tk.Frame):
@@ -252,7 +262,7 @@ class BaseParametersFrame(tk.Frame):
         '''Initialize the parameters
         params is a tuple: (varname, operator, value)
         e.g. ('E1', '=', '100')'''
-        super().__init__(parent)
+        super().__init__(parent, borderwidth=1, relief='raised')
 
         # make widgets
         self._widgets: InputParameterFrame = []
@@ -291,10 +301,8 @@ class BaseParametersFrame(tk.Frame):
     def widgets(self):
         return self._widgets
         
-        
 
-
-class LaminaLevelParams(BaseParametersFrame):
+class LaminaParamsFrame(BaseParametersFrame):
     '''Frame for the lamina level frame
     Includes: E1, E2, G12, v12
     Computes: v21'''
@@ -380,7 +388,7 @@ class LaminaLevelParams(BaseParametersFrame):
         widget.value = value
 
 
-class FiberLevelParams(BaseParametersFrame):
+class FiberParamsFrame(BaseParametersFrame):
     '''Frame for the fiber level frame
     Includes: Ef, Em, vf, vm, Vf
     Computes: E1, E2, G12, v12, v21'''
@@ -395,9 +403,6 @@ class FiberLevelParams(BaseParametersFrame):
 
         super().__init__(parent, lamina_params)
 
-        self.lamina = LaminaLevelParams(self)
-        self.lamina.grid()
-
         # matrix fraction is readonly
         self.get_widget('Vm')._value.config(state='readonly')
 
@@ -405,38 +410,16 @@ class FiberLevelParams(BaseParametersFrame):
         for entry in self.entries:
             entry.bind('<FocusOut>', self.recalculate)
 
-        # lamina properties are read only here
-        for entry in self.lamina.entries:
-            entry.config(state='readonly')
-
 
     def recalculate(self, event=None):
         '''When an entry is focused out on.
-        Recalculates the lamina level values'''
+        Recalculates the matrix fraction'''
 
         # compute the matrix volume fraction
         try:
             self.Vm = 1 - float(self.Vf)
         except:
             self.Vm = 'n/a'
-
-        # mix the parameters into a lamina if possible
-        try:
-            Ef = float(self.Ef)
-            Em = float(self.Em)
-            Vf = float(self.Vf)
-            Vm = float(self.Vm)
-            vf = float(self.vf)
-            vm = float(self.vm)
-        except:
-            pass
-        else:
-            mixed = mix.EffectiveLamina(Ef, Em, Vf, Vm, vf, vm)
-            self.lamina.E1 = mixed.E1
-            self.lamina.E2 = mixed.E2
-            self.lamina.G12 = mixed.G12
-            self.lamina.v12 = mixed.v12
-            self.lamina.recalculate()
 
     
     @property
@@ -514,15 +497,15 @@ class QInputFrame(tk.Frame):
         '''Make a frame to input the Q matrix parameters'''
         super().__init__(parent)
 
-        self.qmat = QMatrixFrame(self)
-        self.lamina = LaminaLevelParams(self)
+        self.qmat = QParamsFrame(self)
+        self.lamina = LaminaParamsFrame(self)
 
         self.qmat.grid()
         self.lamina.grid()
 
         # when user leaves a mixture field, update stuff
         for entry in self.qmat.entries:
-            entry.bind('<FocusOut>', self.recalculate)
+            entry.bind('<FocusOut>', self.recalculate, None)
 
         # lamina properties are read only here
         for entry in self.lamina.entries:
@@ -547,7 +530,115 @@ class QInputFrame(tk.Frame):
             self.lamina.recalculate()
 
 
-class QMatrixFrame(BaseParametersFrame):
+class LaminaInputFrame(tk.Frame):
+    '''Frame for the inputting lamina level parameters
+    Includes: E1, E2, v12, G12 input
+    Computes: v12, Q'''
+
+    def __init__(self, parent):
+        '''Make a frame to input the Q matrix parameters'''
+        super().__init__(parent)
+
+        self.lamina = LaminaParamsFrame(self)
+        self.qmat = QParamsFrame(self)
+
+        self.lamina.grid()
+        self.qmat.grid()
+
+        # when user leaves a lamina field, update stuff
+        for entry in self.lamina.entries:
+            entry.bind('<FocusOut>', self.recalculate, None)
+
+        # q matrix properties are read only here
+        for entry in self.qmat.entries:
+            entry.config(state='readonly')
+
+
+    def recalculate(self, event=None):
+        '''When an entry is focused out on.
+        Recalculates the q matrix values'''
+
+        # update lower level widgets
+        self.lamina.recalculate()
+
+        try:
+            E1 = float(self.lamina.E1)
+            E2 = float(self.lamina.E2)
+            G12 = float(self.lamina.G12)
+            v12 = float(self.lamina.v12)
+        except:
+            pass
+        else:
+            q = make_Q(E1, E2, G12, v12)
+            self.qmat.Q = q
+
+
+class FiberInputFrame(tk.Frame):
+    '''Frame for the inputting fiber level parameters
+    Includes: Ef, Em, vf, vm, Vf
+    Computes: E1, E2, G12, v12, v21, Q'''
+
+    def __init__(self, parent):
+        '''Make a frame to input the Q matrix parameters'''
+        super().__init__(parent)
+
+        self.fiber = FiberParamsFrame(self)
+        self.lamina = LaminaParamsFrame(self)
+        self.qmat = QParamsFrame(self)
+
+        self.fiber.grid()
+        self.lamina.grid()
+        self.qmat.grid()
+
+        # when user leaves a fiber field, update stuff
+        for entry in self.fiber.entries:
+            entry.bind('<FocusOut>', self.recalculate, None)
+
+        # lamina properties are read only here
+        for entry in self.lamina.entries:
+            entry.config(state='readonly')
+
+        # q matrix properties are read only here
+        for entry in self.qmat.entries:
+            entry.config(state='readonly')
+
+
+    def recalculate(self, event=None):
+        '''When an entry is focused out on.
+        Recalculates the lamina level values'''
+
+        # update lower level widgets
+        self.fiber.recalculate()
+        self.lamina.recalculate()
+
+        # mix the parameters into a lamina if possible
+        try:
+            Ef = float(self.fiber.Ef)
+            Em = float(self.fiber.Em)
+            Vf = float(self.fiber.Vf)
+            Vm = float(self.fiber.Vm)
+            vf = float(self.fiber.vf)
+            vm = float(self.fiber.vm)
+        except:
+            pass
+        else:
+            mixed = mix.EffectiveLamina(Ef, Em, Vf, Vm, vf, vm)
+            self.lamina.E1 = mixed.E1
+            self.lamina.E2 = mixed.E2
+            self.lamina.G12 = mixed.G12
+            self.lamina.v12 = mixed.v12
+            self.lamina.recalculate()
+
+            q = make_Q(
+                mixed.E1,
+                mixed.E2,
+                mixed.G12,
+                mixed.v12
+            )
+            self.qmat.Q = q
+
+
+class QParamsFrame(BaseParametersFrame):
     '''Frame for the Q Matrix.
     Includes: Q11, Q12, Q16,
               Q21, Q22, Q26,
@@ -596,16 +687,15 @@ class QMatrixFrame(BaseParametersFrame):
 
     @Q.setter
     def Q(self, matrix):
-        self.get_widget('Q11').value = matrix[1,1]
-        self.get_widget('Q12').value = matrix[1,2]
-        self.get_widget('Q16').value = matrix[1,6]
-        self.get_widget('Q22').value = matrix[2,2]
-        self.get_widget('Q21').value = matrix[2,1]
-        self.get_widget('Q26').value = matrix[2,6]
-        self.get_widget('Q61').value = matrix[6,1]
-        self.get_widget('Q62').value = matrix[6,2]
-        self.get_widget('Q66').value = matrix[6,6]
-        
+        self.get_widget('Q11').value = matrix[0,0]
+        self.get_widget('Q12').value = matrix[0,1]
+        self.get_widget('Q16').value = matrix[0,2]
+        self.get_widget('Q22').value = matrix[1,1]
+        self.get_widget('Q21').value = matrix[1,0]
+        self.get_widget('Q26').value = matrix[1,2]
+        self.get_widget('Q61').value = matrix[2,0]
+        self.get_widget('Q62').value = matrix[2,1]
+        self.get_widget('Q66').value = matrix[2,2]
 
 
 class InputParameterFrame(tk.Frame):
