@@ -189,7 +189,7 @@ class MaterialEditor(tk.Frame):
         self.name_entry.text.set(mat['name'])
 
         # set radio button
-        self.radio = mat['modulus']['radio']
+        self.radio.set(mat['modulus']['radio'])
 
         # set lamina properties
         lam = mat['modulus']['lamina']
@@ -536,7 +536,7 @@ class InputParameterFrame(tk.Frame):
         '''Name of this variable's value'''
         self._long_value = value
         try:
-            disp_val = '{:.3f}'.format(value)
+            disp_val = '{:.3g}'.format(value)
         except:
             disp_val = value
         self._value.text.set(disp_val)
@@ -545,10 +545,6 @@ class InputParameterFrame(tk.Frame):
     def widgets(self):
         '''List of widgets in this frame'''
         return [self._varname, self._operator, self._value]
-
-
-
-
 
 
 if __name__ == '__main__':
