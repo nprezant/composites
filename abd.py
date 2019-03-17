@@ -75,10 +75,10 @@ for layer in layers:
         mat = json.load(f)
     
     # assign properties
-    layer.E1 = mat['modulus']['E1']
-    layer.E2 = mat['modulus']['E2']
-    layer.G12 = mat['modulus']['G12']
-    layer.v12 = mat['modulus']['v12']
+    layer.E1 = float(mat['modulus']['E1'])
+    layer.E2 = float(mat['modulus']['E2'])
+    layer.G12 = float(mat['modulus']['G12'])
+    layer.v12 = float(mat['modulus']['v12'])
 
 # find Q matrices of each layer
 for layer in layers:
@@ -88,11 +88,11 @@ for layer in layers:
         layer.G12,
         layer.v12
     )
-    layer.Q_nominal = np.array([
-        [120, 5, 0],
-        [5, 20, 0],
-        [0, 0, 15]
-    ])
+    # layer.Q_nominal = np.array([
+    #     [120, 5, 0],
+    #     [5, 20, 0],
+    #     [0, 0, 15]
+    # ])
     layer.Q = rotate_Q(
         layer.Q_nominal, 
         layer.orientation * np.pi / 180
