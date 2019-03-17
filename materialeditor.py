@@ -253,6 +253,7 @@ class MaterialEditor(tk.Frame):
         # recalculate the fields
         self.lamina_input.recalculate()
         self.mixture_input.recalculate()
+        self.q_input.recalculate()
 
 
 class BaseParametersFrame(tk.Frame):
@@ -505,7 +506,7 @@ class QInputFrame(tk.Frame):
 
         # when user leaves a mixture field, update stuff
         for entry in self.qmat.entries:
-            entry.bind('<FocusOut>', self.recalculate, None)
+            entry.bind('<FocusOut>', self.recalculate, '+')
 
         # lamina properties are read only here
         for entry in self.lamina.entries:
@@ -547,7 +548,7 @@ class LaminaInputFrame(tk.Frame):
 
         # when user leaves a lamina field, update stuff
         for entry in self.lamina.entries:
-            entry.bind('<FocusOut>', self.recalculate, None)
+            entry.bind('<FocusOut>', self.recalculate, '+')
 
         # q matrix properties are read only here
         for entry in self.qmat.entries:
@@ -592,7 +593,7 @@ class FiberInputFrame(tk.Frame):
 
         # when user leaves a fiber field, update stuff
         for entry in self.fiber.entries:
-            entry.bind('<FocusOut>', self.recalculate, None)
+            entry.bind('<FocusOut>', self.recalculate, '+')
 
         # lamina properties are read only here
         for entry in self.lamina.entries:
@@ -720,7 +721,7 @@ class InputParameterFrame(tk.Frame):
         # variable value
         txt = tk.StringVar()
         txt.set(value)
-        self._value = tk.Entry(self, textvariable=txt, borderwidth=1, width=10, relief='sunken')
+        self._value = tk.Entry(self, textvariable=txt, borderwidth=1, width=10, relief='sunken', validate='focusout', validatecommand=self._validate)
         self._value.text = txt
 
         # grid positions
@@ -771,6 +772,14 @@ class InputParameterFrame(tk.Frame):
         except:
             disp_val = value
         self._value.text.set(disp_val)
+
+
+    def _validate(self):
+        '''validates the value entry
+        Really, just updates the long value
+        and the display value'''
+        self._long_value = self._value.text.get()
+        return True
 
 
     def widgets(self):
