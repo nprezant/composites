@@ -30,7 +30,7 @@ class Layer:
 
 layers: Layer = []
 
-laminatefile = 'test_from_notes.csv'
+laminatefile = 'problem1.csv'
 with open(laminatefile, 'r') as f:
 
     # skip first line
@@ -88,6 +88,11 @@ for layer in layers:
         layer.G12,
         layer.v12
     )
+    layer.Q_nominal = np.array([
+        [120, 5, 0],
+        [5, 20, 0],
+        [0, 0, 15]
+    ])
     layer.Q = rotate_Q(
         layer.Q_nominal, 
         layer.orientation * np.pi / 180
@@ -106,6 +111,7 @@ for layer in layers:
     A = A + layer.Q * (layer.z_upper - layer.z_lower)
     B = B + (1/2) * layer.Q * (layer.z_upper**2 - layer.z_lower**2)
     D = D + (1/3) * layer.Q * (layer.z_upper**3 - layer.z_lower**3)
+    print(f'upper = {layer.z_upper}, lower = {layer.z_lower}')
 
 # print ABD
 print('A = \n{}\n'.format(A))
