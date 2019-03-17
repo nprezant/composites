@@ -7,7 +7,7 @@ class EffectiveLamina:
         Based on matrix and fiber properties.'''
         self.E1 = E1(Ef, Em, Vf, Vm)
         self.E2 = E2(Ef, Em, Vf, Vm)
-        self.nu12 = nu12(Vf, Vm, nuf, num)
+        self.v12 = v12(Vf, Vm, nuf, num)
         self.Gf = G(Ef, nuf)
         self.Gm = G(Em, num)
         self.G12 = G12(self.Gf, self.Gm, Vf, Vm)
@@ -21,7 +21,7 @@ def E2(Ef, Em, Vf, Vm):
     return (Ef * Em) / (Vf*Em + Vm*Ef)
 
 
-def nu12(Vf, Vm, nuf, num):
+def v12(Vf, Vm, nuf, num):
     return Vf * nuf + Vm * num
 
 
@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     print('E1 =   {:.2f}'.format(lamina.E1))
     print('E2 =   {:.2f}'.format(lamina.E2))
-    print('Nu12 = {:.2f}'.format(lamina.nu12))
+    print('v12 =  {:.2f}'.format(lamina.v12))
     print('Gf =   {:.2f}'.format(lamina.Gf))
     print('Gm =   {:.2f}'.format(lamina.Gm))
     print('G12 =  {:.2f}'.format(lamina.G12))

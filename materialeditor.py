@@ -389,14 +389,14 @@ class FiberLevelParams(BaseParametersFrame):
             Vm = float(self.Vm)
             vf = float(self.vf)
             vm = float(self.vm)
-        except Exception as e:
+        except:
             pass
         else:
             mixed = mix.EffectiveLamina(Ef, Em, Vf, Vm, vf, vm)
             self.lamina.E1 = mixed.E1
             self.lamina.E2 = mixed.E2
             self.lamina.G12 = mixed.G12
-            self.lamina.v12 = mixed.G12
+            self.lamina.v12 = mixed.v12
             self.lamina.recalculate()
 
     
