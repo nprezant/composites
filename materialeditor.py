@@ -3,7 +3,10 @@ import tkinter as tk
 from tkinter import filedialog
 import json
 
+import numpy as np
+
 import mixtures as mix
+from stiffness import Q2props
 
 class MaterialEditor(tk.Frame):
     '''GUI to make the laminates'''
@@ -54,15 +57,28 @@ class MaterialEditor(tk.Frame):
         self.mixture_radio.grid()
         self.mixture_props.grid()
 
+        # Q matrix properties entry
+        self.q_frame = tk.Frame(self.master, borderwidth=1, relief='raised')
+        self.q_radio = tk.Radiobutton(
+            self.q_frame,
+            text='Q Matrix Properties', 
+            variable=self.radio, 
+            value='q')
+        self.q_radio.value = 'q'
+        self.q_props = QInputFrame(self.q_frame)
+        self.q_radio.grid()
+        self.q_props.grid()
+
         # bottom frame
         self.bottom_frame = tk.Frame(self.master)
         self.status_bar = tk.Label(self.bottom_frame, text='')
         self.status_bar.grid(row=0, column=1, sticky='w')
 
         # overall layout
-        self.top_frame.grid(row=0, column=0, columnspan=2, sticky='nwe')
-        self.lamina_frame.grid(row=1, column=1, sticky='nwe')
-        self.mixture_frame.grid(row=1, column=0, sticky='nwe')
+        self.top_frame.grid(row=0, column=0, columnspan=3, sticky='nwe')
+        self.lamina_frame.grid(row=1, column=0, sticky='nwe')
+        self.mixture_frame.grid(row=1, column=1, sticky='nwe')
+        self.q_frame.grid(row=1, column=2, sticky='nwe')
         self.bottom_frame.grid(row=None, column=0, sticky='we')
 
         # self.master.rowconfigure(0, weight=1)
@@ -122,10 +138,15 @@ class MaterialEditor(tk.Frame):
         mat = {'name': self.name_entry.text.get()}
 
         # modulus dict
+        # TODO take off the "lamina" and let it access both lamina and qmat attributes
         if self.radio == 'lamina':
             enabled_mod = self.lamina_props
-        else:
+        elif self.radio == 'mixture':
             enabled_mod = self.mixture_props.lamina
+        elif self.radio == 'q':
+            enabled_mod = self.q_props.lamina
+        else:
+            raise ValueError('No Radio Button Selected')
         
         mod = {
             'E1': enabled_mod.E1,
@@ -160,12 +181,25 @@ class MaterialEditor(tk.Frame):
             'v21': self.mixture_props.lamina.v21
         }
 
+        qmat = {
+            'enabled': self.radio.get() == self.q_radio.value,
+            'E1': self.q_props.lamina.E1,
+            'E2': self.q_props.lamina.E2,
+            'G12': self.q_props.lamina.G12,
+            'v12': self.q_props.lamina.v12,
+            'v21': self.q_props.lamina.v21,
+            'Q': self.q_props.qmat.Q.tolist()
+        }
+
         # add radio option to output
         mod['radio'] = self.radio.get()
 
-        # put it all together
+        # put modulus together
         mod['lamina'] = lam
         mod['mixture'] = mix
+        mod['qmatrix'] = qmat
+
+        # add modulus to main material
         mat['modulus'] = mod
 
         # write
@@ -251,6 +285,11 @@ class BaseParametersFrame(tk.Frame):
     @property
     def entries(self):
         return [frame._value for frame in self._widgets]
+
+    
+    @property
+    def widgets(self):
+        return self._widgets
         
         
 
@@ -464,6 +503,108 @@ class FiberLevelParams(BaseParametersFrame):
     def Vm(self, value):
         widget = self.get_widget('Vm')
         widget.value = value
+
+
+class QInputFrame(tk.Frame):
+    '''Frame for the inputting Q parameters
+    Includes: Q matrix input
+    Computes: E1, E2, G12, v12, v21'''
+
+    def __init__(self, parent):
+        '''Make a frame to input the Q matrix parameters'''
+        super().__init__(parent)
+
+        self.qmat = QMatrixFrame(self)
+        self.lamina = LaminaLevelParams(self)
+
+        self.qmat.grid()
+        self.lamina.grid()
+
+        # when user leaves a mixture field, update stuff
+        for entry in self.qmat.entries:
+            entry.bind('<FocusOut>', self.recalculate)
+
+        # lamina properties are read only here
+        for entry in self.lamina.entries:
+            entry.config(state='readonly')
+
+
+    def recalculate(self, event=None):
+        '''When an entry is focused out on.
+        Recalculates the lamina level values'''
+
+        # back out lamina parameters from Q matrix if possible
+        try:
+            q = self.qmat.Q.astype(float)
+        except:
+            pass
+        else:
+            E1, E2, v12, _, G12 = Q2props(q)
+            self.lamina.E1 = E1
+            self.lamina.E2 = E2
+            self.lamina.G12 = G12
+            self.lamina.v12 = v12
+            self.lamina.recalculate()
+
+
+class QMatrixFrame(BaseParametersFrame):
+    '''Frame for the Q Matrix.
+    Includes: Q11, Q12, Q16,
+              Q21, Q22, Q26,
+              Q61, Q62, Q66.
+    Computes Nothing.'''
+
+    def __init__(self, parent):
+        '''Make a frame to input the fiber level parameters'''
+
+        varnames = [
+            'Q11', 'Q12', 'Q16', 
+            'Q21', 'Q22', 'Q26',
+            'Q61', 'Q62', 'Q66']
+        operators = ['='] * len(varnames)
+        values = [''] * len(varnames)
+        params = zip(varnames, operators, values)
+
+        super().__init__(parent, params)
+
+        widgets = iter(self.widgets)
+        for i in range(3):
+            for j in range(3):
+                widget = next(widgets)
+                # widget._varname.width = 50
+                widget.grid(row=i, column=j)
+
+
+    
+    @property
+    def Q(self):
+        Q11 = self.get_value('Q11')
+        Q12 = self.get_value('Q12')
+        Q16 = self.get_value('Q16')
+        Q22 = self.get_value('Q22')
+        Q21 = self.get_value('Q21')
+        Q26 = self.get_value('Q26')
+        Q61 = self.get_value('Q61')
+        Q62 = self.get_value('Q62')
+        Q66 = self.get_value('Q66')
+        return np.array([
+            [Q11, Q12, Q16],
+            [Q21, Q22, Q26],
+            [Q61, Q62, Q66]
+        ])
+
+
+    @Q.setter
+    def Q(self, matrix):
+        self.get_widget('Q11').value = matrix[1,1]
+        self.get_widget('Q12').value = matrix[1,2]
+        self.get_widget('Q16').value = matrix[1,6]
+        self.get_widget('Q22').value = matrix[2,2]
+        self.get_widget('Q21').value = matrix[2,1]
+        self.get_widget('Q26').value = matrix[2,6]
+        self.get_widget('Q61').value = matrix[6,1]
+        self.get_widget('Q62').value = matrix[6,2]
+        self.get_widget('Q66').value = matrix[6,6]
         
 
 
@@ -477,13 +618,13 @@ class InputParameterFrame(tk.Frame):
         # variable name
         txt = tk.StringVar()
         txt.set(varname)
-        self._varname = tk.Label(self, textvariable=txt, borderwidth=0, width=10)
+        self._varname = tk.Label(self, textvariable=txt, borderwidth=0, width=3)
         self._varname.text = txt
 
         # variable operator
         txt = tk.StringVar()
         txt.set(operator)
-        self._operator = tk.Label(self, textvariable=txt, borderwidth=0, width=10)
+        self._operator = tk.Label(self, textvariable=txt, borderwidth=0, width=2)
         self._operator.text = txt
 
         # variable value
