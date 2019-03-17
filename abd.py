@@ -30,7 +30,7 @@ class Layer:
 
 layers: Layer = []
 
-laminatefile = 'test2.txt'
+laminatefile = 'test_from_notes.csv'
 with open(laminatefile, 'r') as f:
 
     # skip first line
@@ -77,7 +77,6 @@ for layer in layers:
     # assign properties
     layer.E1 = mat['modulus']['E1']
     layer.E2 = mat['modulus']['E2']
-    layer.E2 = mat['modulus']['E2']
     layer.G12 = mat['modulus']['G12']
     layer.v12 = mat['modulus']['v12']
 
@@ -91,8 +90,13 @@ for layer in layers:
     )
     layer.Q = rotate_Q(
         layer.Q_nominal, 
-        layer.orientation
+        layer.orientation * np.pi / 180
     )
+    with np.nditer(layer.Q, op_flags=['readwrite']) as it:
+        for x in it:
+            if abs(x) <= 1e-5:
+                x[...] = 0
+    print('Q rotated to {} is: \n{}\n'.format(layer.orientation, layer.Q))
 
 # find A, B, D
 A = np.zeros((3,3))
