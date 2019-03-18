@@ -8,8 +8,9 @@ import numpy as np
 import mixtures as mix
 from stiffness import Q2props, make_Q
 
-# horizontal spacing
+# GUI spacing
 HSPACE = 20
+VSPACE = 10
 
 class MaterialEditor(tk.Frame):
     '''GUI to make the laminates'''
@@ -79,10 +80,14 @@ class MaterialEditor(tk.Frame):
 
         # overall layout
         self.top_frame.grid(row=0, column=0, columnspan=3, sticky='nwe')
-        self.lamina_frame.grid(row=1, column=0, sticky='nwe')
-        self.mixture_frame.grid(row=2, column=0, sticky='nwe')
-        self.q_frame.grid(row=3, column=0, sticky='nwe')
+        self.lamina_frame.grid(row=2, column=0, sticky='nwe')
+        self.mixture_frame.grid(row=4, column=0, sticky='nwe')
+        self.q_frame.grid(row=6, column=0, sticky='nwe')
         self.bottom_frame.grid(row=None, column=0, sticky='we')
+
+        self.master.rowconfigure(1, minsize=VSPACE)
+        self.master.rowconfigure(3, minsize=VSPACE)
+        self.master.rowconfigure(5, minsize=VSPACE)
 
         # self.master.rowconfigure(0, weight=1)
         # self.master.columnconfigure(0, weight=1)
