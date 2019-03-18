@@ -1,5 +1,6 @@
 
 import tkinter as tk
+from tkinter import ttk
 from tkinter import filedialog
 import json
 
@@ -85,12 +86,10 @@ class MaterialEditor(tk.Frame):
         self.q_frame.grid(row=6, column=0, sticky='nwe')
         self.bottom_frame.grid(row=None, column=0, sticky='we')
 
-        self.rowconfigure(1, minsize=VSPACE)
-        self.rowconfigure(3, minsize=VSPACE)
-        self.rowconfigure(5, minsize=VSPACE)
+        ttk.Separator(self, orient='horizontal').grid(row=1, column=0)
+        ttk.Separator(self, orient='horizontal').grid(row=3, column=0)
+        ttk.Separator(self, orient='horizontal').grid(row=5, column=0)
 
-        # self.master.rowconfigure(0, weight=1)
-        # self.master.columnconfigure(0, weight=1)
         self.master.minsize(3, 2)
 
         # top-level menu
