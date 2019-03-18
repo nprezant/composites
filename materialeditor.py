@@ -24,7 +24,7 @@ class MaterialEditor(tk.Frame):
         self.master.title('Material Editor')
 
         # material title
-        self.top_frame = tk.Frame(self.master, borderwidth=1, relief='raised', pady=5)
+        self.top_frame = tk.Frame(self, borderwidth=1, relief='raised', pady=5)
         self.title = tk.Label(self.top_frame, text='Material Name')
         txt = tk.StringVar()
         self.name_entry = tk.Entry(self.top_frame, textvariable=txt)
@@ -38,7 +38,7 @@ class MaterialEditor(tk.Frame):
         self.radio.set('lamina')
 
         # lamina properties entry
-        self.lamina_frame = tk.Frame(self.master, borderwidth=1, relief='raised')
+        self.lamina_frame = tk.Frame(self, borderwidth=1, relief='raised')
         self.lamina_radio = tk.Radiobutton(
             self.lamina_frame, 
             text='Lamina Level Properties', 
@@ -50,7 +50,7 @@ class MaterialEditor(tk.Frame):
         self.lamina_input.grid()
 
         # mixture properties entry
-        self.mixture_frame = tk.Frame(self.master, borderwidth=1, relief='raised')
+        self.mixture_frame = tk.Frame(self, borderwidth=1, relief='raised')
         self.mixture_radio = tk.Radiobutton(
             self.mixture_frame,
             text='Fiber/Matrix Properties', 
@@ -62,7 +62,7 @@ class MaterialEditor(tk.Frame):
         self.mixture_input.grid()
 
         # Q matrix properties entry
-        self.q_frame = tk.Frame(self.master, borderwidth=1, relief='raised')
+        self.q_frame = tk.Frame(self, borderwidth=1, relief='raised')
         self.q_radio = tk.Radiobutton(
             self.q_frame,
             text='Q Matrix Properties', 
@@ -74,7 +74,7 @@ class MaterialEditor(tk.Frame):
         self.q_input.grid()
 
         # bottom frame
-        self.bottom_frame = tk.Frame(self.master)
+        self.bottom_frame = tk.Frame(self)
         self.status_bar = tk.Label(self.bottom_frame, text='')
         self.status_bar.grid(row=0, column=1, sticky='w')
 
@@ -85,9 +85,9 @@ class MaterialEditor(tk.Frame):
         self.q_frame.grid(row=6, column=0, sticky='nwe')
         self.bottom_frame.grid(row=None, column=0, sticky='we')
 
-        self.master.rowconfigure(1, minsize=VSPACE)
-        self.master.rowconfigure(3, minsize=VSPACE)
-        self.master.rowconfigure(5, minsize=VSPACE)
+        self.rowconfigure(1, minsize=VSPACE)
+        self.rowconfigure(3, minsize=VSPACE)
+        self.rowconfigure(5, minsize=VSPACE)
 
         # self.master.rowconfigure(0, weight=1)
         # self.master.columnconfigure(0, weight=1)
@@ -267,11 +267,11 @@ class MaterialEditor(tk.Frame):
 class BaseParametersFrame(tk.Frame):
     '''Base frame for the input parameters'''
 
-    def __init__(self, parent, params):
+    def __init__(self, master, params):
         '''Initialize the parameters
         params is a tuple: (varname, operator, value)
         e.g. ('E1', '=', '100')'''
-        super().__init__(parent, borderwidth=1, relief='raised')
+        super().__init__(master, borderwidth=1, relief='raised')
 
         # make widgets
         self._widgets: InputParameterFrame = []
@@ -316,7 +316,7 @@ class LaminaParamsFrame(BaseParametersFrame):
     Includes: E1, E2, G12, v12
     Computes: v21'''
 
-    def __init__(self, parent):
+    def __init__(self, master):
         '''Make a frame to input the lamina level parameters'''
 
         varnames = ['E1', 'E2', 'G12', 'v12', 'v21']
@@ -324,7 +324,7 @@ class LaminaParamsFrame(BaseParametersFrame):
         values = [''] * len(varnames)
         lamina_params = zip(varnames, operators, values)
 
-        super().__init__(parent, lamina_params)
+        super().__init__(master, lamina_params)
 
         for entry in self.entries:
             entry.bind('<FocusOut>', self.recalculate)
@@ -402,7 +402,7 @@ class FiberParamsFrame(BaseParametersFrame):
     Includes: Ef, Em, vf, vm, Vf
     Computes: E1, E2, G12, v12, v21'''
 
-    def __init__(self, parent):
+    def __init__(self, master):
         '''Make a frame to input the fiber level parameters'''
 
         varnames = ['Ef', 'Em', 'vf', 'vm', 'Vf', 'Vm']
@@ -410,7 +410,7 @@ class FiberParamsFrame(BaseParametersFrame):
         values = [''] * len(varnames)
         lamina_params = zip(varnames, operators, values)
 
-        super().__init__(parent, lamina_params)
+        super().__init__(master, lamina_params)
 
         # matrix fraction is readonly
         self.get_widget('Vm')._value.config(state='readonly')
@@ -502,9 +502,9 @@ class QInputFrame(tk.Frame):
     Includes: Q matrix input
     Computes: E1, E2, G12, v12, v21'''
 
-    def __init__(self, parent):
+    def __init__(self, master):
         '''Make a frame to input the Q matrix parameters'''
-        super().__init__(parent)
+        super().__init__(master)
 
         self.qmat = QParamsFrame(self)
         self.lamina = LaminaParamsFrame(self)
@@ -547,9 +547,9 @@ class LaminaInputFrame(tk.Frame):
     Includes: E1, E2, v12, G12 input
     Computes: v12, Q'''
 
-    def __init__(self, parent):
+    def __init__(self, master):
         '''Make a frame to input the Q matrix parameters'''
-        super().__init__(parent)
+        super().__init__(master)
 
         self.lamina = LaminaParamsFrame(self)
         self.qmat = QParamsFrame(self)
@@ -593,9 +593,9 @@ class FiberInputFrame(tk.Frame):
     Includes: Ef, Em, vf, vm, Vf
     Computes: E1, E2, G12, v12, v21, Q'''
 
-    def __init__(self, parent):
+    def __init__(self, master):
         '''Make a frame to input the Q matrix parameters'''
-        super().__init__(parent)
+        super().__init__(master)
 
         self.fiber = FiberParamsFrame(self)
         self.lamina = LaminaParamsFrame(self)
@@ -664,7 +664,7 @@ class QParamsFrame(BaseParametersFrame):
               Q61, Q62, Q66.
     Computes Nothing.'''
 
-    def __init__(self, parent):
+    def __init__(self, master):
         '''Make a frame to input the fiber level parameters'''
 
         varnames = [
@@ -675,7 +675,7 @@ class QParamsFrame(BaseParametersFrame):
         values = [''] * len(varnames)
         params = zip(varnames, operators, values)
 
-        super().__init__(parent, params)
+        super().__init__(master, params)
 
         widgets = iter(self.widgets)
         for i in range(3):
@@ -720,9 +720,9 @@ class QParamsFrame(BaseParametersFrame):
 class InputParameterFrame(tk.Frame):
     '''Frame for an input parameter'''
 
-    def __init__(self, parent, varname, operator='=', value=''):
+    def __init__(self, master, varname, operator='=', value=''):
         '''Initialize the table'''
-        super().__init__(parent)
+        super().__init__(master)
 
         # variable name
         txt = tk.StringVar()
@@ -808,4 +808,5 @@ class InputParameterFrame(tk.Frame):
 if __name__ == '__main__':
     root = tk.Tk()
     app = MaterialEditor(master=root)
+    app.grid()
     app.mainloop()
