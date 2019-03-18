@@ -7,7 +7,11 @@ import json
 import numpy as np
 
 import mixtures as mix
-from stiffness import Q2props, make_Q
+from stiffness import (
+    Q2props,
+    make_Q,
+    rotate_Q
+)
 
 # GUI spacing
 HSPACE = 20
@@ -94,6 +98,7 @@ class MaterialEditor(tk.Frame):
 
         # top-level menu
         menubar = tk.Menu(self.master)
+        menubar.add_command(label='Q Rotations', command=self.open_q_rotater)
 
         # file pulldown
         filemenu = tk.Menu(menubar, tearoff=0)
@@ -118,6 +123,14 @@ class MaterialEditor(tk.Frame):
         self.bind_all('<Control-KeyRelease-w>', self.close_event)
         self.bind_all('<Control-KeyRelease-s>', self.save)
         self.bind_all('<Control-KeyRelease-o>', self.open)
+
+
+    def open_q_rotater(self, event=None):
+        '''Opens the q rotater form
+        This is just a test area to put this'''
+        t = tk.Toplevel(self)
+        qrot = QRotateUi(t)
+        qrot.grid()
 
 
     def close_event(self, event=None):
@@ -802,6 +815,51 @@ class InputParameterFrame(tk.Frame):
     def widgets(self):
         '''List of widgets in this frame'''
         return [self._varname, self._operator, self._value]
+
+
+class QRotateUi(tk.Frame):
+    '''User interface for rotating Q matrices
+    Inputs: Q, theta
+    Computes: Q_rotated'''
+
+    def __init__(self, master):
+        '''Make a frame to input Q matrix params
+        Also display the rotations'''
+        super().__init__(master)
+
+        self.theta_frame = InputParameterFrame(self, chr(952))
+        self.qmat1 = QParamsFrame(self)
+        self.qmat2 = QParamsFrame(self)
+
+        self.theta_frame.grid()
+        self.qmat1.grid()
+        self.qmat2.grid()
+
+        # when user leaves an input Q field, update stuff
+        for entry in self.qmat1.entries:
+            entry.bind('<FocusOut>', self.recalculate, '+')
+
+        # when theta entry is left, update stuff
+        self.theta_frame._value.bind('<FocusOut>', self.recalculate, '+')
+
+        # output Q fields are read only
+        for entry in self.qmat2.entries:
+            entry.config(state='readonly')
+
+        
+    def recalculate(self, event=None):
+        '''When an entry is focused out on.
+        Recalculates the rotated Q values'''
+
+        # rotate Q if possible
+        try:
+            q = self.qmat1.Q.astype(float)
+            theta = float(self.theta_frame.value) * np.pi / 180
+        except:
+            pass
+        else:
+            q_rot = rotate_Q(q, theta)
+            self.qmat2.Q = q_rot
 
 
 if __name__ == '__main__':
