@@ -388,15 +388,8 @@ class EntryTable(tk.Frame):
             [cb.select() for cb in checkbuttons]
 
 
-    def export_data(self, event=None):
+    def export_data(self, filename):
         '''Export the data for this laminate'''
-        filename = filedialog.asksaveasfilename(
-            title = 'Save file as',
-            filetypes = (
-                ('csv files', '*.csv'),
-                ('text files','*.txt'),
-                ('all files','*.*')))
-        if filename == '': return
         with open(filename, 'w') as f:
             for cell in self._table_header:
                 f.write('{:8},'.format(cell.text.get()))
@@ -408,15 +401,8 @@ class EntryTable(tk.Frame):
                 f.write('\n')
 
 
-    def import_data(self, event=None):
+    def import_data(self, filename):
         '''Import the data for a laminate'''
-        filename = filedialog.askopenfilename(
-            title = 'Select file to open',
-            filetypes = (
-                ('csv files', '*.csv'),
-                ('text files','*.txt'),
-                ('all files','*.*')))
-        if filename == '': return
         self.select_all()
         self.delete_selected_rows()
         with open(filename, 'r') as f:
@@ -434,9 +420,13 @@ class EntryTable(tk.Frame):
 color_map = {
     '0':    '#99cfff', # Dark Blue
     '30':   '#99fbff', # Light Blue
+    '-30':   '#99fbff', # Light Blue
     '45':   '#99ff9c', # Green
+    '-45':   '#99ff9c', # Green
     '60':   '#ffe099', # Orange
-    '90':   '#ffb099' # Red
+    '-60':   '#ffe099', # Orange
+    '90':   '#ffb099', # Red
+    '-90':   '#ffb099' # Red
 }
 
 def map_color(key):

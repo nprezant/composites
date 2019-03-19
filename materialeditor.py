@@ -103,7 +103,8 @@ class MaterialEditor(tk.Frame):
         # file pulldown
         filemenu = tk.Menu(menubar, tearoff=0)
         filemenu.add_command(label='Save', command=self.save, accelerator='Ctrl+S')
-        filemenu.add_command(label='Open', command=self.open, accelerator='Ctrl+O')
+        filemenu.add_command(label='Save', command=self.save_as)
+        filemenu.add_command(label='Open', command=self.open_dialog, accelerator='Ctrl+O')
         filemenu.add_separator()
         filemenu.add_command(label='Quit', command=self.close_event, accelerator='Ctrl+W')
         menubar.add_cascade(label='File', menu=filemenu)
@@ -122,7 +123,7 @@ class MaterialEditor(tk.Frame):
         # keypress bindings
         self.bind_all('<Control-KeyRelease-w>', self.close_event)
         self.bind_all('<Control-KeyRelease-s>', self.save)
-        self.bind_all('<Control-KeyRelease-o>', self.open)
+        self.bind_all('<Control-KeyRelease-o>', self.open_dialog)
 
 
     def open_q_rotater(self, event=None):
@@ -134,12 +135,23 @@ class MaterialEditor(tk.Frame):
 
 
     def close_event(self, event=None):
-        self.master.quit()
+        self.quit()
 
 
     def save(self, event=None):
-        '''Writes the data in this form out to a file'''
+        '''Save the file to the already saved path'''
+        try:
+            path = self._save_path
+            if path is None:
+                raise ValueError
+        except:
+            self.save_as()
+        else:
+            self._write_to_file(path)
 
+
+    def save_as(self, event=None):
+        '''Writes the data in this form out to a file'''
         # file path
         filename = filedialog.asksaveasfilename(
             title = 'Save file as',
@@ -150,9 +162,13 @@ class MaterialEditor(tk.Frame):
 
         if filename == '':
             return
+        else:
+            self._save_path = filename
+            self.save(filename)
 
-        if not filename[-5:] == '.json':
-            filename = filename + '.json'
+
+    def _write_to_file(self, filename):
+        '''Writes the data in this form out to a file'''
 
         # main material dict
         mat = {'name': self.name_entry.text.get()}
@@ -232,14 +248,24 @@ class MaterialEditor(tk.Frame):
             json.dump(mat, f, indent=4)
 
 
-    def open(self, event=None):
-        '''Loads material data from a file'''
+    def open_dialog(self, event=None):
+        '''Opens material data with user dialog'''
         filename = filedialog.askopenfilename(
             title = 'Select file to open',
             filetypes = (
                 ('json files', '*.json'),
                 ('all files','*.*')))
-        if filename == '': return
+        if filename == '':
+            return
+        else:
+            self.open(filename)
+
+
+
+    def open(self, filename):
+        '''Loads material data from a file'''
+
+        self._save_path = filename
 
         with open(filename, 'r') as f:
             mat = json.load(f)
@@ -860,6 +886,229 @@ class QRotateUi(tk.Frame):
         else:
             q_rot = rotate_Q(q, theta)
             self.qmat2.Q = q_rot
+
+
+class AParamsFrame(BaseParametersFrame):
+    '''Frame for the A Matrix.
+    Includes: A11, A12, A16,
+              A21, A22, A26,
+              A61, A62, A66.
+    Computes Nothing.'''
+
+    def __init__(self, master):
+        '''Make a frame to display A matrix parameters'''
+
+        varnames = [
+            'A11', 'A12', 'A16', 
+            'A21', 'A22', 'A26',
+            'A61', 'A62', 'A66']
+        operators = ['='] * len(varnames)
+        values = [''] * len(varnames)
+        params = zip(varnames, operators, values)
+
+        super().__init__(master, params)
+
+        widgets = iter(self.widgets)
+        for i in range(3):
+            for j in range(3):
+                widget = next(widgets)
+                widget.grid(row=i, column=j)
+
+
+    
+    @property
+    def A(self):
+        A11 = self.get_value('A11')
+        A12 = self.get_value('A12')
+        A16 = self.get_value('A16')
+        A22 = self.get_value('A22')
+        A21 = self.get_value('A21')
+        A26 = self.get_value('A26')
+        A61 = self.get_value('A61')
+        A62 = self.get_value('A62')
+        A66 = self.get_value('A66')
+        return np.array([
+            [A11, A12, A16],
+            [A21, A22, A26],
+            [A61, A62, A66]
+        ])
+
+
+    @A.setter
+    def A(self, matrix):
+        self.get_widget('A11').value = matrix[0,0]
+        self.get_widget('A12').value = matrix[0,1]
+        self.get_widget('A16').value = matrix[0,2]
+        self.get_widget('A22').value = matrix[1,1]
+        self.get_widget('A21').value = matrix[1,0]
+        self.get_widget('A26').value = matrix[1,2]
+        self.get_widget('A61').value = matrix[2,0]
+        self.get_widget('A62').value = matrix[2,1]
+        self.get_widget('A66').value = matrix[2,2]
+
+
+class BParamsFrame(BaseParametersFrame):
+    '''Frame for the A Matrix.
+    Includes: A11, A12, A16,
+              A21, A22, A26,
+              A61, A62, A66.
+    Computes Nothing.'''
+
+    def __init__(self, master):
+        '''Make a frame to display A matrix parameters'''
+
+        varnames = [
+            'B11', 'B12', 'B16', 
+            'B21', 'B22', 'B26',
+            'B61', 'B62', 'B66']
+        operators = ['='] * len(varnames)
+        values = [''] * len(varnames)
+        params = zip(varnames, operators, values)
+
+        super().__init__(master, params)
+
+        widgets = iter(self.widgets)
+        for i in range(3):
+            for j in range(3):
+                widget = next(widgets)
+                widget.grid(row=i, column=j)
+
+
+    
+    @property
+    def B(self):
+        B11 = self.get_value('B11')
+        B12 = self.get_value('B12')
+        B16 = self.get_value('B16')
+        B22 = self.get_value('B22')
+        B21 = self.get_value('B21')
+        B26 = self.get_value('B26')
+        B61 = self.get_value('B61')
+        B62 = self.get_value('B62')
+        B66 = self.get_value('B66')
+        return np.array([
+            [B11, B12, B16],
+            [B21, B22, B26],
+            [B61, B62, B66]
+        ])
+
+
+    @B.setter
+    def B(self, matrix):
+        self.get_widget('B11').value = matrix[0,0]
+        self.get_widget('B12').value = matrix[0,1]
+        self.get_widget('B16').value = matrix[0,2]
+        self.get_widget('B22').value = matrix[1,1]
+        self.get_widget('B21').value = matrix[1,0]
+        self.get_widget('B26').value = matrix[1,2]
+        self.get_widget('B61').value = matrix[2,0]
+        self.get_widget('B62').value = matrix[2,1]
+        self.get_widget('B66').value = matrix[2,2]
+
+
+class DParamsFrame(BaseParametersFrame):
+    '''Frame for the A Matrix.
+    Includes: D11, D12, D16,
+              D21, D22, D26,
+              D61, D62, D66
+    Computes Nothing.'''
+
+    def __init__(self, master):
+        '''Make a frame to display A matrix parameters'''
+
+        varnames = [
+            'D11', 'D12', 'D16', 
+            'D21', 'D22', 'D26',
+            'D61', 'D62', 'D66']
+        operators = ['='] * len(varnames)
+        values = [''] * len(varnames)
+        params = zip(varnames, operators, values)
+
+        super().__init__(master, params)
+
+        widgets = iter(self.widgets)
+        for i in range(3):
+            for j in range(3):
+                widget = next(widgets)
+                widget.grid(row=i, column=j)
+
+
+    
+    @property
+    def D(self):
+        D11 = self.get_value('D11')
+        D12 = self.get_value('D12')
+        D16 = self.get_value('D16')
+        D22 = self.get_value('D22')
+        D21 = self.get_value('D21')
+        D26 = self.get_value('D26')
+        D61 = self.get_value('D61')
+        D62 = self.get_value('D62')
+        D66 = self.get_value('D66')
+        return np.array([
+            [D11, D12, D16],
+            [D21, D22, D26],
+            [D61, D62, D66]
+        ])
+
+
+    @D.setter
+    def D(self, matrix):
+        self.get_widget('D11').value = matrix[0,0]
+        self.get_widget('D12').value = matrix[0,1]
+        self.get_widget('D16').value = matrix[0,2]
+        self.get_widget('D22').value = matrix[1,1]
+        self.get_widget('D21').value = matrix[1,0]
+        self.get_widget('D26').value = matrix[1,2]
+        self.get_widget('D61').value = matrix[2,0]
+        self.get_widget('D62').value = matrix[2,1]
+        self.get_widget('D66').value = matrix[2,2]
+
+
+class ABDInputFrame(tk.Frame):
+    '''Frame for the inputting ABD parameters
+    Includes: ABD matrix input
+    Computes: nothing'''
+
+    def __init__(self, master):
+        '''Make a frame to input the ABD matrix parameters'''
+        super().__init__(master)
+
+        self.a_frame = AParamsFrame(self)
+        self.b_frame = BParamsFrame(self)
+        self.d_frame = DParamsFrame(self)
+
+        self.a_frame.grid(row=0, column=0, sticky='nsew')
+        self.b_frame.grid(row=0, column=1, sticky='nsew')
+        self.d_frame.grid(row=1, column=1, sticky='nsew')
+
+        self._display_mode = False
+
+
+    @property
+    def display_mode(self):
+        '''When it is in display mode, entries are read-only'''
+        return self._display_mode
+
+
+    @display_mode.setter
+    def display_mode(self, value:bool):
+        '''Sets the display mode.
+        TRUE means entries are read only
+        FALSE means entries can be inserted'''
+
+        entries = []
+        entries.extend(self.a_frame.entries)
+        entries.extend(self.b_frame.entries)
+        entries.extend(self.d_frame.entries)
+
+        if value == True:
+            for entry in entries:
+                entry.config(state='readonly')
+        else:
+            for entry in entries:
+                entry.config(state='normal')
+
 
 
 if __name__ == '__main__':
