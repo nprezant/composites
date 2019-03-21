@@ -43,7 +43,7 @@ class LaminateMaker(tk.Frame):
 
         # file pulldown
         filemenu = tk.Menu(menubar, tearoff=0)
-        filemenu.add_command(label='Open', command=self.open)
+        filemenu.add_command(label='Open', command=self.open_dialog)
         filemenu.add_command(label='Save', command=self.save)
         filemenu.add_command(label='Save As', command=self.save_as)
         filemenu.add_separator()

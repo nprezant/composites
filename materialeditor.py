@@ -98,17 +98,19 @@ class MaterialEditor(tk.Frame):
 
         # top-level menu
         menubar = tk.Menu(self.master)
-        menubar.add_command(label='Q Rotations', command=self.open_q_rotater)
 
         # file pulldown
         filemenu = tk.Menu(menubar, tearoff=0)
         filemenu.add_command(label='Save', command=self.save, accelerator='Ctrl+S')
-        filemenu.add_command(label='Save', command=self.save_as)
+        filemenu.add_command(label='Save As', command=self.save_as)
         filemenu.add_command(label='Open', command=self.open_dialog, accelerator='Ctrl+O')
         filemenu.add_separator()
         filemenu.add_command(label='Quit', command=self.close_event, accelerator='Ctrl+W')
         menubar.add_cascade(label='File', menu=filemenu)
         self.master.config(menu=menubar)
+        
+        # q rotater form
+        menubar.add_command(label='Q Rotations', command=self.open_q_rotater)
 
         # popup menu
         rclick = tk.Menu(self.master, tearoff=0)
