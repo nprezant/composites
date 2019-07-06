@@ -94,7 +94,7 @@ class LaminateMaker(tk.Frame):
 
         path = Path(path)
 
-        A, B, D = calculate_ABD(
+        A, B, D, _ = calculate_ABD(
             lam_file=path.parts[-1], 
             lam_dir=str(path.parent) + '\\', 
             mat_dir=str(path.parent) + '\\'

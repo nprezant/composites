@@ -132,6 +132,14 @@ def calculate_ABD_from_layers(layers):
         D = D + (1/3) * layer.Q * (layer.z_upper**3 - layer.z_lower**3)
     return A, B, D
 
+def get_layers(lam_file, lam_dir='', mat_dir=''):
+    lam_fp = lam_dir + lam_file
+    layers = read_file(lam_fp)
+    calculate_z(layers)
+    retreive_mat_data(layers, mat_dir)
+    rotate_layers(layers)
+    return layers
+
 
 def calculate_ABD(lam_file, lam_dir='', mat_dir=''):
     '''Calculates the ABD matrix from a `laminate file`
@@ -143,7 +151,7 @@ def calculate_ABD(lam_file, lam_dir='', mat_dir=''):
     retreive_mat_data(layers, mat_dir)
     rotate_layers(layers)
     A, B, D = calculate_ABD_from_layers(layers)
-    return A, B, D
+    return A, B, D, layers
 
 
 
